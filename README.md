@@ -13,7 +13,17 @@ npm install
 ```bash
 NODE_ENV=development
 DATABASE_URL=your_database_url
+BASE_URL=http://localhost:5000
 
+# JWT Secrets
+JWT_SECRET=your_jwt_secret_key_here
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_here
+
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
 ```
 
 ## Run the server:

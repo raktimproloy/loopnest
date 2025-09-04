@@ -22,16 +22,16 @@ async function main() {
 main();
 
 process.on('unhandledRejection', (error) => {
-  console.error('😡 Unhandled Rejection:', error);
+  // Silently handle unhandled rejections without logging
   if (server) {
     server.close(() => {
-      process.exit();
+      process.exit(1);
     });
   }
-  process.exit();
+  process.exit(1);
 });
 
-process.on('uncaughtException', () => {
-  console.log('😡 Uncaught Exception');
-  process.exit();
+process.on('uncaughtException', (error) => {
+  // Silently handle uncaught exceptions without logging
+  process.exit(1);
 });
