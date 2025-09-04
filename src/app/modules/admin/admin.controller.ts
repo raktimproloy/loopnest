@@ -145,6 +145,25 @@ const getAllStudents = catchAsync(async (req, res) => {
   });
 });
 
+const getStudentById = catchAsync(async (req, res) => {
+  if (!req.admin?.adminId) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      success: false,
+      message: 'Admin not authenticated',
+      errorSources: [{ path: 'auth', message: 'Admin not authenticated' }]
+    });
+  }
+
+  const result = await StudentServices.getStudentById(req.params.id);
+  
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Student fetched successfully",
+    data: result,
+  });
+});
+
 const updateStudent = catchAsync(async (req, res) => {
   if (!req.admin?.adminId) {
     return res.status(httpStatus.UNAUTHORIZED).json({
@@ -192,6 +211,7 @@ export const adminController = {
   getAllAdmins,
   deleteAdmin,
   getAllStudents,
+  getStudentById,
   updateStudent,
   deleteStudent,
 };

@@ -63,6 +63,13 @@ router.get(
   adminController.getAllStudents
 );
 
+router.get(
+  "/students/:id",
+  adminAuth(),
+  requireRole(['super_admin', 'admin']),
+  adminController.getStudentById
+);
+
 router.put(
   "/students/:id",
   adminAuth(),

@@ -249,6 +249,16 @@ export const getStudentProfile = async (userId: string) => {
   return student;
 };
 
+export const getStudentById = async (studentId: string) => {
+  const student = await Student.findById(studentId).select('-password -otpCode -otpExpire');
+  
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  return student;
+};
+
 export const updateStudentProfile = async (userId: string, updateData: Partial<TStudent>) => {
   // Check if student exists
   const existingStudent = await Student.findById(userId);
@@ -381,6 +391,7 @@ export const StudentServices = {
   resendOTP,
   refreshAccessToken,
   getStudentProfile,
+  getStudentById,
   updateStudentProfile,
   getAllStudents,
   updateStudentByAdmin,
