@@ -14,7 +14,6 @@ const auth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Access token is required',
-          errorSources: [{ path: 'authorization', message: 'Access token is required' }]
         });
       }
 
@@ -26,7 +25,6 @@ const auth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid or expired token',
-          errorSources: [{ path: 'authorization', message: 'Invalid or expired token' }]
         });
       }
 
@@ -35,7 +33,6 @@ const auth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid token',
-          errorSources: [{ path: 'authorization', message: 'Invalid token' }]
         });
       }
 
@@ -45,7 +42,6 @@ const auth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid token',
-          errorSources: [{ path: 'authorization', message: 'Invalid token' }]
         });
       }
 
@@ -61,7 +57,6 @@ const auth = () => {
       return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Authentication failed',
-        errorSources: [{ path: 'auth', message: 'Authentication failed' }]
       });
     }
   };

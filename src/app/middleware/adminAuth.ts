@@ -13,7 +13,6 @@ const adminAuth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Admin access token is required',
-          errorSources: [{ path: 'authorization', message: 'Admin access token is required' }]
         });
       }
 
@@ -25,7 +24,6 @@ const adminAuth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid or expired admin token',
-          errorSources: [{ path: 'authorization', message: 'Invalid or expired admin token' }]
         });
       }
 
@@ -34,7 +32,6 @@ const adminAuth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid admin token',
-          errorSources: [{ path: 'authorization', message: 'Invalid admin token' }]
         });
       }
 
@@ -44,7 +41,6 @@ const adminAuth = () => {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid admin token',
-          errorSources: [{ path: 'authorization', message: 'Invalid admin token' }]
         });
       }
 
@@ -61,7 +57,6 @@ const adminAuth = () => {
       return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Admin authentication failed',
-        errorSources: [{ path: 'auth', message: 'Admin authentication failed' }]
       });
     }
   };
@@ -74,7 +69,6 @@ const requireRole = (roles: string[]) => {
       return res.status(httpStatus.UNAUTHORIZED).json({
         success: false,
         message: 'Admin not authenticated',
-        errorSources: [{ path: 'auth', message: 'Admin not authenticated' }]
       });
     }
 
@@ -82,7 +76,6 @@ const requireRole = (roles: string[]) => {
       return res.status(httpStatus.FORBIDDEN).json({
         success: false,
         message: 'Insufficient permissions',
-        errorSources: [{ path: 'role', message: 'Insufficient permissions' }]
       });
     }
 
@@ -97,7 +90,6 @@ const requirePermission = (permission: string) => {
       return res.status(httpStatus.UNAUTHORIZED).json({
         success: false,
         message: 'Admin not authenticated',
-        errorSources: [{ path: 'auth', message: 'Admin not authenticated' }]
       });
     }
 
@@ -105,7 +97,6 @@ const requirePermission = (permission: string) => {
       return res.status(httpStatus.FORBIDDEN).json({
         success: false,
         message: 'Insufficient permissions',
-        errorSources: [{ path: 'permission', message: 'Insufficient permissions' }]
       });
     }
 

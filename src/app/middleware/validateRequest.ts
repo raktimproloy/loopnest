@@ -18,15 +18,9 @@ const validateRequest = (schema: ZodObject<any>) => {
     } catch (error: any) {
       // Handle Zod validation errors
       if (error.name === 'ZodError') {
-        const errorSources = error.issues.map((issue: any) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-        }));
-
         return res.status(400).json({
           success: false,
           message: 'Validation Error',
-          errorSources,
         });
       }
       
