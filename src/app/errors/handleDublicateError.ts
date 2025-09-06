@@ -4,25 +4,36 @@ import {
 } from '../Interface/error.interface';
 
 const handleDuplicateError = (error: any): TGenericErrorResponse => {
-  const match = error.message.match(/"([^"]*)"/);
-  const extractedMessage = match && match[1];
+  // Prefer Mongo's structured fields if available
+  const keyPattern = error?.keyPattern || {};
+  const keyValue = error?.keyValue || {};
+  const fieldFromKey = Object.keys(keyPattern)[0] || Object.keys(keyValue)[0];
 
-  // Determine the field name from the error
-  let fieldName = 'field';
+  // Fallback: try to parse message text
+  const match = error?.message?.match(/index: (\w+)_\d+ dup key: \{ .*?\}/) || error?.message?.match(/dup key: \{ (\w+):/);
+  const fieldFromMessage = match && match[1];
+
+  const fieldName = fieldFromKey || fieldFromMessage || 'field';
+
   let userFriendlyMessage = 'This field already exists';
-  
-  if (extractedMessage) {
-    if (extractedMessage.includes('slug')) {
-      fieldName = 'slug';
+  switch (fieldName) {
+    case 'slug':
       userFriendlyMessage = 'A course with this slug already exists. Please choose a different slug.';
-    } else if (extractedMessage.includes('email')) {
-      fieldName = 'email';
+      break;
+    case 'email':
       userFriendlyMessage = 'A user with this email already exists. Please use a different email.';
-    } else if (extractedMessage.includes('title')) {
-      fieldName = 'title';
+      break;
+    case 'title':
       userFriendlyMessage = 'A course with this title already exists. Please choose a different title.';
-    } else {
-      userFriendlyMessage = `${extractedMessage} already exists. Please choose a different value.`;
+      break;
+    case 'phone':
+      userFriendlyMessage = 'A user with this phone number already exists. Please use a different number.';
+      break;
+    default: {
+      const valueShown = Object.values(keyValue)[0];
+      if (valueShown) {
+        userFriendlyMessage = `${fieldName} '${String(valueShown)}' already exists. Please choose a different value.`;
+      }
     }
   }
 
@@ -35,7 +46,7 @@ const handleDuplicateError = (error: any): TGenericErrorResponse => {
   const statusCode = 400;
   return {
     statusCode,
-    message: 'Duplicate Entry Error',
+    message: userFriendlyMessage,
     errorSources,
   };
 };

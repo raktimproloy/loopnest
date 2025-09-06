@@ -7,32 +7,56 @@ import { createAccessToken, createRefreshToken } from '../../../utils/jwt';
 import { generateOTP, sendOTPEmail } from '../../../utils/emailService';
 
 export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_input?: string }) => {
-  // Normalize auth input to email/phone
-  const authInput = payload.auth_input as string | undefined;
-  if (authInput) {
-    const looksLikeEmail = /@/.test(authInput);
-    if (looksLikeEmail) payload.email = authInput.toLowerCase();
-    else payload.phone = authInput;
-  }
-  // Check if student already exists by email or phone
-  const orConditions: any[] = [];
-  if (payload.email) orConditions.push({ email: payload.email });
-  if (payload.phone) orConditions.push({ phone: payload.phone });
+  // Normalize and classify auth input strictly as email or phone
+  const authInputRaw = (payload.auth_input || '').trim();
+  const isEmailInput = /@/.test(authInputRaw);
+  // Prefer explicit fields when provided, otherwise derive from auth_input
+  const normalizedEmail = (payload.email?.trim() || (isEmailInput ? authInputRaw : undefined))?.toLowerCase();
+  const normalizedPhone = (payload.phone?.trim() || (!isEmailInput ? authInputRaw : undefined))
+    ?.replace(/\s|\-|\(|\)/g, '');
 
-  if (orConditions.length > 0) {
-    const existingStudent = await Student.findOne({
-      $or: orConditions,
-      isDeleted: false,
-    });
+  // Debug: show how auth_input is being interpreted
+  // eslint-disable-next-line no-console
+  console.log('[student.register] auth_input parsed', {
+    authInputRaw,
+    isEmailInput,
+    normalizedEmail,
+    normalizedPhone,
+  });
 
-    if (existingStudent) {
-      const conflictField =
-        payload.email && existingStudent.email === payload.email
-          ? 'email'
-          : 'phone';
+  // Build a clean creation payload (avoid unintended fields like empty strings)
+  const creationData: Partial<TStudent> = {
+    fullName: payload.fullName,
+    registrationType: 'manual',
+    email: normalizedEmail,
+    phone: normalizedPhone,
+  };
+
+  // Remove undefined keys explicitly
+  if (!creationData.email) delete (creationData as any).email;
+  if (!creationData.phone) delete (creationData as any).phone;
+
+  // Existence checks per-field to ensure accurate messaging
+  if (creationData.email) {
+    const existingByEmail = await Student.findOne({ email: creationData.email, isDeleted: false });
+    if (existingByEmail) {
+      // eslint-disable-next-line no-console
+      console.log('[student.register] existingStudent found by email', { email: creationData.email });
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        `Student with this ${conflictField} already exists`
+        'A user with this email already exists. Please use a different email.'
+      );
+    }
+  }
+
+  if (creationData.phone) {
+    const existingByPhone = await Student.findOne({ phone: creationData.phone, isDeleted: false });
+    if (existingByPhone) {
+      // eslint-disable-next-line no-console
+      console.log('[student.register] existingStudent found by phone', { phone: creationData.phone });
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'A user with this phone number already exists. Please use a different number.'
       );
     }
   }
@@ -41,26 +65,53 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   const hashedPassword = await bcrypt.hash(payload.password!, 12);
 
   // Generate OTP if email provided (email-based verification)
-  const otpEnabled = !!payload.email;
+  const otpEnabled = !!creationData.email;
   const otpCode = otpEnabled ? generateOTP() : undefined;
   const otpExpire = otpEnabled
     ? new Date(Date.now() + 10 * 60 * 1000)
     : undefined; // 10 minutes
 
   // Create student
-  const newStudent = await Student.create({
-    ...payload,
-    password: hashedPassword,
-    registrationType: 'manual',
-    emailVerified: otpEnabled ? false : true,
-    otpCode,
-    otpExpire,
-    status: 'active',
-  });
+  let newStudent;
+  try {
+    newStudent = await Student.create({
+      ...creationData,
+      password: hashedPassword,
+      registrationType: 'manual',
+      emailVerified: otpEnabled ? false : true,
+      otpCode,
+      otpExpire,
+      status: 'active',
+    });
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      // Determine duplicate field from error or payload
+      const keyPattern = error?.keyPattern || {};
+      const keyValue = error?.keyValue || {};
+      const indexNameMatch = error?.message?.match(/index: (\w+)_\d+/);
+      const indexName = indexNameMatch && indexNameMatch[1];
+      const fieldFromKey = Object.keys(keyPattern)[0] || Object.keys(keyValue)[0] || indexName;
+
+      const duplicateField = fieldFromKey?.includes('phone')
+        ? 'phone'
+        : fieldFromKey?.includes('email')
+        ? 'email'
+        : creationData.phone
+        ? 'phone'
+        : 'email';
+
+      const message = duplicateField === 'phone'
+        ? 'A user with this phone number already exists. Please use a different number.'
+        : 'A user with this email already exists. Please use a different email.';
+
+      throw new AppError(httpStatus.BAD_REQUEST, message);
+    }
+    throw error;
+  }
 
   // Send OTP email only if email present
   if (otpEnabled) {
-    const emailResult = await sendOTPEmail(payload.email!, otpCode!, payload.fullName!);
+    const emailResult = await sendOTPEmail(creationData.email!, otpCode!, payload.fullName!);
     if (!emailResult.success) {
       // Email sending failed, but continue with OTP generation
     }
