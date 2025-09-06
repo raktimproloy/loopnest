@@ -3,7 +3,7 @@ import { TStudent } from "./student.interface";
 
 const studentSchema = new Schema<TStudent>({
   fullName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String },
   phone: { type: String },
   password: { type: String },
   registrationType: { 
@@ -40,8 +40,9 @@ studentSchema.pre(['updateOne', 'findOneAndUpdate'], function(next) {
   next();
 });
 
-// Index for better query performance
-studentSchema.index({ email: 1 });
+// Indexes for better query performance and uniqueness on optional fields
+studentSchema.index({ email: 1 }, { unique: true, sparse: true });
+studentSchema.index({ phone: 1 }, { unique: true, sparse: true });
 studentSchema.index({ googleId: 1 });
 studentSchema.index({ facebookId: 1 });
 

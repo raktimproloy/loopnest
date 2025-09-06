@@ -6,43 +6,64 @@ import httpStatus from 'http-status';
 import { createAccessToken, createRefreshToken } from '../../../utils/jwt';
 import { generateOTP, sendOTPEmail } from '../../../utils/emailService';
 
-export const manualRegisterStudent = async (payload: Partial<TStudent>) => {
-  // Check if student already exists
-  const existingStudent = await Student.findOne({
-    email: payload.email,
-    isDeleted: false,
-  });
+export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_input?: string }) => {
+  // Normalize auth input to email/phone
+  const authInput = payload.auth_input as string | undefined;
+  if (authInput) {
+    const looksLikeEmail = /@/.test(authInput);
+    if (looksLikeEmail) payload.email = authInput.toLowerCase();
+    else payload.phone = authInput;
+  }
+  // Check if student already exists by email or phone
+  const orConditions: any[] = [];
+  if (payload.email) orConditions.push({ email: payload.email });
+  if (payload.phone) orConditions.push({ phone: payload.phone });
 
-  if (existingStudent) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Student with this email already exists"
-    );
+  if (orConditions.length > 0) {
+    const existingStudent = await Student.findOne({
+      $or: orConditions,
+      isDeleted: false,
+    });
+
+    if (existingStudent) {
+      const conflictField =
+        payload.email && existingStudent.email === payload.email
+          ? 'email'
+          : 'phone';
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Student with this ${conflictField} already exists`
+      );
+    }
   }
 
   // Hash password
   const hashedPassword = await bcrypt.hash(payload.password!, 12);
 
-  // Generate OTP
-  const otpCode = generateOTP();
-  const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  // Generate OTP if email provided (email-based verification)
+  const otpEnabled = !!payload.email;
+  const otpCode = otpEnabled ? generateOTP() : undefined;
+  const otpExpire = otpEnabled
+    ? new Date(Date.now() + 10 * 60 * 1000)
+    : undefined; // 10 minutes
 
   // Create student
   const newStudent = await Student.create({
     ...payload,
     password: hashedPassword,
     registrationType: 'manual',
-    emailVerified: false,
+    emailVerified: otpEnabled ? false : true,
     otpCode,
     otpExpire,
     status: 'active',
   });
 
-  // Send OTP email
-  const emailResult = await sendOTPEmail(payload.email!, otpCode, payload.fullName!);
-  if (!emailResult.success) {
-    // If email fails, still create user but log the issue
-    // Email sending failed, but continue with OTP generation
+  // Send OTP email only if email present
+  if (otpEnabled) {
+    const emailResult = await sendOTPEmail(payload.email!, otpCode!, payload.fullName!);
+    if (!emailResult.success) {
+      // Email sending failed, but continue with OTP generation
+    }
   }
 
   // Remove sensitive data
@@ -51,10 +72,16 @@ export const manualRegisterStudent = async (payload: Partial<TStudent>) => {
   return studentWithoutSensitiveData;
 };
 
-export const loginStudent = async (credentials: TLoginCredentials) => {
-  // Find student
+export const loginStudent = async (credentials: TLoginCredentials | { auth_input: string; password: string }) => {
+  const identifier = (credentials as any).auth_input ?? (credentials as any).identifier ?? (credentials as any).email;
+  const password = (credentials as any).password;
+
+  // Decide if identifier is email or phone
+  const isEmail = /@/.test(identifier);
+
+  // Find student by email or phone
   const student = await Student.findOne({
-    email: credentials.email,
+    ...(isEmail ? { email: identifier } : { phone: identifier }),
     isDeleted: false,
     status: 'active',
   });
@@ -63,8 +90,8 @@ export const loginStudent = async (credentials: TLoginCredentials) => {
     throw new AppError(httpStatus.NOT_FOUND, "Student not found");
   }
 
-  // Check if email is verified
-  if (!student.emailVerified) {
+  // Check email verification only if email-based account
+  if (student.email && !student.emailVerified) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "Please verify your email first"
@@ -72,7 +99,7 @@ export const loginStudent = async (credentials: TLoginCredentials) => {
   }
 
   // Check password
-  const isPasswordValid = await bcrypt.compare(credentials.password, student.password!);
+  const isPasswordValid = await bcrypt.compare(password, student.password!);
   if (!isPasswordValid) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid credentials");
   }
@@ -83,15 +110,15 @@ export const loginStudent = async (credentials: TLoginCredentials) => {
   // Generate tokens
   const jwtPayload = {
     userId: student._id.toString(),
-    email: student.email,
+    email: student.email || '',
     registrationType: student.registrationType,
   };
 
   const accessToken = createAccessToken(jwtPayload);
   const refreshToken = createRefreshToken(jwtPayload);
 
-  // Remove sensitive data
-  const { password, otpCode, otpExpire, ...studentWithoutSensitiveData } = student.toObject();
+  // Remove sensitive data (alias to avoid name collision with local 'password')
+  const { password: _password, otpCode: _otpCode, otpExpire: _otpExpire, ...studentWithoutSensitiveData } = student.toObject();
 
   return {
     student: studentWithoutSensitiveData,
@@ -144,7 +171,7 @@ export const socialLoginStudent = async (socialData: TSocialLoginData) => {
   const refreshToken = createRefreshToken(jwtPayload);
 
   // Remove sensitive data
-  const { password, otpCode, otpExpire, ...studentWithoutSensitiveData } = student!.toObject();
+  const { password: _password2, otpCode: _otpCode2, otpExpire: _otpExpire2, ...studentWithoutSensitiveData } = student!.toObject();
 
   return {
     student: studentWithoutSensitiveData,

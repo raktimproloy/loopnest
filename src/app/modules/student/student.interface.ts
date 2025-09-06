@@ -1,6 +1,6 @@
 export type TStudent = {
   fullName: string;
-  email: string;
+  email?: string;
   phone?: string;
   password?: string;
   registrationType: 'manual' | 'google' | 'facebook';

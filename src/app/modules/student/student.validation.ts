@@ -1,10 +1,13 @@
 import { z } from "zod";
 
+const phoneSchema = z
+  .string()
+  .regex(/^[0-9]{8,15}$/i, "Invalid phone format");
+
 const manualRegisterValidationSchema = z.object({
   body: z.object({
     fullName: z.string().min(2, "Full name must be at least 2 characters"),
-    email: z.string().email("Invalid email format"),
-    phone: z.string().optional(),
+    auth_input: z.string().min(3, "Email or phone is required"),
     password: z.string().min(6, "Password must be at least 6 characters"),
   }),
   cookies: z.object({}).optional(),
@@ -12,7 +15,7 @@ const manualRegisterValidationSchema = z.object({
 
 const loginValidationSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email format"),
+    auth_input: z.string().min(3, "Email or phone is required"),
     password: z.string().min(1, "Password is required"),
   }),
   cookies: z.object({}).optional(),
