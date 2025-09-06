@@ -67,9 +67,14 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   }
 
   // Remove sensitive data
-  const { password, otpCode: _, otpExpire: __, ...studentWithoutSensitiveData } = newStudent.toObject();
+  const { password, otpCode: _otp, otpExpire: _otpExpire, ...studentWithoutSensitiveData } = newStudent.toObject();
 
-  return studentWithoutSensitiveData;
+  // For now, include OTP in response when email verification is enabled
+  const responseData = otpEnabled
+    ? { ...studentWithoutSensitiveData, otpCode }
+    : studentWithoutSensitiveData;
+
+  return responseData;
 };
 
 export const loginStudent = async (credentials: TLoginCredentials | { auth_input: string; password: string }) => {
