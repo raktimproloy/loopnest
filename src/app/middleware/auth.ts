@@ -48,7 +48,7 @@ const auth = () => {
       // Add user info to request
       req.user = {
         userId: student._id.toString(),
-        email: student.email,
+        email: student.email || '',
         registrationType: student.registrationType,
       };
 

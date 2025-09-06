@@ -37,7 +37,7 @@ const socialLogin = catchAsync(async (req, res) => {
 });
 
 const verifyOTP = catchAsync(async (req, res) => {
-  const result = await StudentServices.verifyOTP(req.body.email, req.body.otpCode);
+  const result = await StudentServices.verifyOTP(req.body.auth_input, req.body.otpCode);
   
   sendResponse(res, {
     statusCode: httpStatus.OK,

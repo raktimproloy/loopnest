@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import AppError from '../../errors/AppError';
-import { TLoginCredentials, TSocialLoginData, TStudent } from './student.interface';
+import { TJWTPayload, TLoginCredentials, TSocialLoginData, TStudent } from './student.interface';
 import { Student } from './student.model';
 import httpStatus from 'http-status';
 import { createAccessToken, createRefreshToken } from '../../../utils/jwt';
@@ -108,7 +108,7 @@ export const loginStudent = async (credentials: TLoginCredentials | { auth_input
   await Student.findByIdAndUpdate(student._id, { lastLogin: new Date() });
 
   // Generate tokens
-  const jwtPayload = {
+  const jwtPayload: TJWTPayload = {
     userId: student._id.toString(),
     email: student.email || '',
     registrationType: student.registrationType,
@@ -161,9 +161,9 @@ export const socialLoginStudent = async (socialData: TSocialLoginData) => {
   }
 
   // Generate tokens
-  const jwtPayload = {
+  const jwtPayload: TJWTPayload = {
     userId: student!._id.toString(),
-    email: student!.email,
+    email: student!.email || '',
     registrationType: student!.registrationType,
   };
 
@@ -180,9 +180,10 @@ export const socialLoginStudent = async (socialData: TSocialLoginData) => {
   };
 };
 
-export const verifyOTP = async (email: string, otpCode: string) => {
+export const verifyOTP = async (authInput: string, otpCode: string) => {
+  const isEmail = /@/.test(authInput);
   const student = await Student.findOne({
-    email,
+    ...(isEmail ? { email: authInput.toLowerCase() } : { phone: authInput }),
     otpCode,
     otpExpire: { $gt: new Date() },
     isDeleted: false,
@@ -252,9 +253,9 @@ export const refreshAccessToken = async (refreshToken: string) => {
     }
 
     // Generate new access token
-    const jwtPayload = {
+    const jwtPayload: TJWTPayload = {
       userId: student._id.toString(),
-      email: student.email,
+      email: student.email || '',
       registrationType: student.registrationType,
     };
 

@@ -34,7 +34,7 @@ const socialLoginValidationSchema = z.object({
 
 const verifyOTPValidationSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email format"),
+    auth_input: z.string().min(3, "Email or phone is required"),
     otpCode: z.string().length(6, "OTP must be 6 digits"),
   }),
   cookies: z.object({}).optional(),
