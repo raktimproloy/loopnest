@@ -12,24 +12,29 @@ import handleZodError from '../errors/zodError';
 const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   let statusCode = 500;
   let message = 'Something went wrong';
+  let errorSources: TErrorSource = [];
 
   // Handle MongoDB duplicate key error (E11000)
   if (error.code === 11000 || (error.name === 'MongoServerError' && error.code === 11000)) {
     const simplifiedErrors = handleDuplicateError(error);
     statusCode = simplifiedErrors?.statusCode;
     message = simplifiedErrors?.message;
+    errorSources = simplifiedErrors?.errorSources || [];
   } else if (error instanceof ZodError) {
     const simplifiedErrors = handleZodError(error);
     statusCode = simplifiedErrors?.statusCode;
     message = simplifiedErrors?.message;
+    errorSources = simplifiedErrors?.errorSources || [];
   } else if (error?.name === 'ValidationError') {
     const simplifiedErrors = handleValidationError(error);
     statusCode = simplifiedErrors?.statusCode;
     message = simplifiedErrors?.message;
+    errorSources = simplifiedErrors?.errorSources || [];
   } else if (error.name === 'CastError') {
     const simplifiedErrors = handleCastError(error);
     statusCode = simplifiedErrors?.statusCode;
     message = simplifiedErrors?.message;
+    errorSources = simplifiedErrors?.errorSources || [] as TErrorSource;
   } else if (error.name === 'MongoServerError') {
     // Handle other MongoDB server errors
     message = 'Database error occurred';
@@ -43,10 +48,12 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     message = error?.message || 'An unexpected error occurred';
   }
 
-  // Send minimal error response
+  // Send detailed error response
   res.status(statusCode).json({
     success: false,
     message,
+    errorSources,
+    ...(config.node_env === 'development' && { stack: error?.stack }),
   });
 };
 

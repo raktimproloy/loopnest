@@ -63,6 +63,13 @@ const updateProfileValidationSchema = z.object({
   cookies: z.object({}).optional(),
 });
 
+const updateProfileImageValidationSchema = z.object({
+  body: z.object({
+    image: z.string().min(10, "Image data is required"), // expect base64 data URL or raw base64
+  }),
+  cookies: z.object({}).optional(),
+});
+
 export const StudentValidation = {
   manualRegisterValidationSchema,
   loginValidationSchema,
@@ -71,4 +78,5 @@ export const StudentValidation = {
   resendOTPValidationSchema,
   refreshTokenValidationSchema,
   updateProfileValidationSchema,
+  updateProfileImageValidationSchema,
 };

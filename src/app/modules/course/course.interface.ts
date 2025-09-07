@@ -25,6 +25,7 @@ export type TCourse = {
   description: string;
   slug: string;
   imageUrl: string;
+  videoUrl?: string;
   courseType: string;
   upcomingCourse: number;
   statistics: TCourseStatistics;
@@ -45,6 +46,7 @@ export type TCourseCreateData = {
   description: string;
   slug: string;
   imageUrl: string;
+  videoUrl?: string;
   courseType: string;
   upcomingCourse: number;
   statistics: TCourseStatistics;
@@ -61,6 +63,7 @@ export type TCourseUpdateData = {
   description?: string;
   slug?: string;
   imageUrl?: string;
+  videoUrl?: string;
   courseType?: string;
   upcomingCourse?: number;
   statistics?: TCourseStatistics;

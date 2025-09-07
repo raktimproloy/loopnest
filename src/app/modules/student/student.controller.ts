@@ -1,7 +1,7 @@
 import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
-import { StudentServices } from "./student.service";
 import httpStatus from "http-status";
+import { StudentServices } from "./student.service";
 
 const manualRegister = catchAsync(async (req, res) => {
   const result = await StudentServices.manualRegisterStudent(req.body);
@@ -116,4 +116,30 @@ export const studentController = {
   refreshToken,
   getProfile,
   updateProfile,
+  updateProfileImage: catchAsync(async (req, res) => {
+    if (!req.user?.userId) {
+      return res.status(httpStatus.UNAUTHORIZED).json({
+        success: false,
+        message: 'User not authenticated',
+        errorSources: [{ path: 'auth', message: 'User not authenticated' }]
+      });
+    }
+
+    const file = (req as any).file as any;
+    if (!file) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        success: false,
+        message: 'Image file is required (field name: image)'
+      });
+    }
+
+    const result = await StudentServices.updateProfileImageFromDisk(req.user.userId, file.filename);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Profile image updated successfully",
+      data: result,
+    });
+  }),
 };

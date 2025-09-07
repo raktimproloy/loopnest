@@ -5,6 +5,9 @@ import { Student } from './student.model';
 import httpStatus from 'http-status';
 import { createAccessToken, createRefreshToken } from '../../../utils/jwt';
 import { generateOTP, sendOTPEmail } from '../../../utils/emailService';
+import fs from 'fs';
+import path from 'path';
+import config from '../../config';
 
 export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_input?: string }) => {
   // Normalize and classify auth input strictly as email or phone
@@ -467,6 +470,71 @@ export const deleteStudentByAdmin = async (studentId: string) => {
   return { message: "Student deleted successfully" };
 };
 
+export const updateProfileImage = async (userId: string, imageData: string) => {
+  const student = await Student.findById(userId);
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  // Ensure upload directory exists
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'profile');
+  fs.mkdirSync(uploadsDir, { recursive: true });
+
+  // Parse base64 data URL or raw base64
+  let base64 = imageData;
+  const dataUrlMatch = imageData.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.+)$/i);
+  let ext = 'png';
+  if (dataUrlMatch) {
+    const mime = dataUrlMatch[1];
+    base64 = dataUrlMatch[3];
+    if (/jpeg|jpg/i.test(mime)) ext = 'jpg';
+    else if (/png/i.test(mime)) ext = 'png';
+    else if (/webp/i.test(mime)) ext = 'webp';
+  }
+
+  const randomPart = `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
+  const filename = `profile_${userId}_${randomPart}.${ext}`;
+  const filePath = path.join(uploadsDir, filename);
+
+  const buffer = Buffer.from(base64, 'base64');
+  fs.writeFileSync(filePath, buffer);
+
+  const baseUrl = (config.base_url || '').replace(/\/$/, '');
+  const publicUrl = `${baseUrl}/public/uploads/profile/${filename}`;
+
+  const updated = await Student.findByIdAndUpdate(
+    userId,
+    { profileImage: publicUrl },
+    { new: true }
+  ).select('-password -otpCode -otpExpire');
+
+  return { profileImage: publicUrl, student: updated };
+};
+
+export const updateProfileImageFromDisk = async (userId: string, filename: string) => {
+  const student = await Student.findById(userId);
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'profile');
+  const filePath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(filePath)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Uploaded file not found");
+  }
+
+  const baseUrl = (config.base_url || '').replace(/\/$/, '');
+  const publicUrl = `${baseUrl}/public/uploads/profile/${filename}`;
+
+  const updated = await Student.findByIdAndUpdate(
+    userId,
+    { profileImage: publicUrl },
+    { new: true }
+  ).select('-password -otpCode -otpExpire');
+
+  return { profileImage: publicUrl, student: updated };
+};
+
 export const StudentServices = {
   manualRegisterStudent,
   loginStudent,
@@ -480,4 +548,8 @@ export const StudentServices = {
   getAllStudents,
   updateStudentByAdmin,
   deleteStudentByAdmin,
+  updateProfileImage,
+  updateProfileImageFromDisk,
 };
+
+// no dynamic assignment; function is included in StudentServices above

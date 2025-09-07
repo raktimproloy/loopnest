@@ -28,6 +28,7 @@ const courseSchema = new Schema<TCourse>({
   description: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   imageUrl: { type: String, required: true },
+  videoUrl: { type: String },
   courseType: { type: String, required: true },
   upcomingCourse: { type: Number, required: true, default: 0 },
   statistics: { type: statisticsSchema, required: true },

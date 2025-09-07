@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
+import path from "path";
 import router from "./app/routes";
 import globalErrorHandler from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFound";
@@ -27,6 +28,8 @@ const allowedOriginPatterns = [
 
 // Parsers
 app.use(express.json());
+// Serve static files from public directory
+app.use("/public", express.static(path.join(process.cwd(), "public")));
 app.use(
   cors({
     origin: (origin, callback) => {

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { ZodObject } from "zod";
+import { ZodError, ZodObject } from "zod";
 import catchAsync from "../../utils/catchAsync";
+import handleZodError from "../errors/zodError";
 
 const validateRequest = (schema: ZodObject<any>) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -16,15 +17,17 @@ const validateRequest = (schema: ZodObject<any>) => {
 
       next();
     } catch (error: any) {
-      // Handle Zod validation errors
-      if (error.name === 'ZodError') {
-        return res.status(400).json({
+      // Handle Zod validation errors with detailed messages
+      if (error instanceof ZodError) {
+        const simplified = handleZodError(error);
+        return res.status(simplified.statusCode).json({
           success: false,
-          message: 'Validation Error',
+          message: simplified.message,
+          errorSources: simplified.errorSources,
         });
       }
-      
-      // Handle other errors
+
+      // Handle other errors via global error handler
       next(error);
     }
   });
