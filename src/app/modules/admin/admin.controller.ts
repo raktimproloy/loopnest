@@ -3,6 +3,7 @@ import sendResponse from "../../../utils/sendResponse";
 import { AdminServices } from "./admin.service";
 import { StudentServices } from "../student/student.service";
 import httpStatus from "http-status";
+import config from "../../config";
 
 const registerAdmin = catchAsync(async (req, res) => {
   const result = await AdminServices.registerAdmin(req.body);
@@ -17,12 +18,23 @@ const registerAdmin = catchAsync(async (req, res) => {
 
 const loginAdmin = catchAsync(async (req, res) => {
   const result = await AdminServices.loginAdmin(req.body);
+
+  const isProd = config.node_env === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as any;
+
+  res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  res.cookie('refreshToken', result.refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
   
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Admin login successful",
-    data: result,
+    data: { admin: result.admin },
   });
 });
 

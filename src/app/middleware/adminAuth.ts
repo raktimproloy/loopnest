@@ -6,8 +6,10 @@ import { Admin } from '../modules/admin/admin.model';
 const adminAuth = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Get token from header
-      const token = req.headers.authorization?.replace('Bearer ', '');
+      // Prefer cookie-based token; fallback to Authorization header
+      const tokenFromCookie = (req as any).cookies?.accessToken as string | undefined;
+      const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
+      const token = tokenFromCookie || tokenFromHeader;
       
       if (!token) {
         return res.status(httpStatus.UNAUTHORIZED).json({

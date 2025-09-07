@@ -2,6 +2,7 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import httpStatus from "http-status";
 import { StudentServices } from "./student.service";
+import config from "../../config";
 
 const manualRegister = catchAsync(async (req, res) => {
   const result = await StudentServices.manualRegisterStudent(req.body);
@@ -16,23 +17,46 @@ const manualRegister = catchAsync(async (req, res) => {
 
 const login = catchAsync(async (req, res) => {
   const result = await StudentServices.loginStudent(req.body);
+
+  const isProd = config.node_env === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as any;
+
+  // 7d for access, 30d for refresh
+  res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  res.cookie('refreshToken', result.refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
   
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Login successful",
-    data: result,
+    data: { student: result.student },
   });
 });
 
 const socialLogin = catchAsync(async (req, res) => {
   const result = await StudentServices.socialLoginStudent(req.body);
+
+  const isProd = config.node_env === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as any;
+
+  res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+  res.cookie('refreshToken', result.refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
   
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Social login successful",
-    data: result,
+    data: { student: result.student },
   });
 });
 
@@ -59,13 +83,25 @@ const resendOTP = catchAsync(async (req, res) => {
 });
 
 const refreshToken = catchAsync(async (req, res) => {
-  const result = await StudentServices.refreshAccessToken(req.body.refreshToken);
+  const refreshTokenCookie = (req as any).cookies?.refreshToken as string | undefined;
+  const tokenToUse = req.body.refreshToken || refreshTokenCookie || '';
+  const result = await StudentServices.refreshAccessToken(tokenToUse);
+
+  const isProd = config.node_env === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as any;
+
+  res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
   
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Token refreshed successfully",
-    data: result,
+    data: { accessToken: result.accessToken },
   });
 });
 
