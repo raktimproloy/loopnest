@@ -17,7 +17,8 @@ const getCookieOptions = (req: any) => {
   host = host || req.hostname;
 
   let domain: string | undefined;
-  if (host && /\.vercel\.app$/i.test(host)) {
+  const isVercel = !!(host && /\.vercel\.app$/i.test(host));
+  if (isVercel) {
     domain = '.vercel.app';
   } else if (host === 'localhost' || host === '127.0.0.1') {
     domain = undefined; // required for localhost cookies to set properly
@@ -25,8 +26,8 @@ const getCookieOptions = (req: any) => {
 
   const base = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd || isVercel,
+    sameSite: (isVercel || isProd) ? 'none' : 'lax',
     path: '/',
   } as any;
   if (domain) base.domain = domain;
