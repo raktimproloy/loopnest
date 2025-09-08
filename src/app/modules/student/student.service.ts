@@ -172,6 +172,7 @@ export const loginStudent = async (credentials: TLoginCredentials | { auth_input
     userId: student._id.toString(),
     email: student.email || '',
     registrationType: student.registrationType,
+    role: student.role,
   };
 
   const accessToken = createAccessToken(jwtPayload);
@@ -226,6 +227,7 @@ export const socialLoginStudent = async (socialData: TSocialLoginData) => {
     userId: student!._id.toString(),
     email: student!.email || '',
     registrationType: student!.registrationType,
+    role: student!.role,
   };
 
   const accessToken = createAccessToken(jwtPayload);
@@ -318,6 +320,7 @@ export const refreshAccessToken = async (refreshToken: string) => {
       userId: student._id.toString(),
       email: student.email || '',
       registrationType: student.registrationType,
+      role: student.role,
     };
 
     const newAccessToken = createAccessToken(jwtPayload);

@@ -96,7 +96,6 @@ router.put(
 
 router.post(
   "/logout",
-  auth(),
   studentController.logout
 );
 

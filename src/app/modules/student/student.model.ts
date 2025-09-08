@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
-import { TStudent } from "./student.interface";
+import { TUser } from "./student.interface";
 
-const studentSchema = new Schema<TStudent>({
+const studentSchema = new Schema<TUser>({
   fullName: { type: String, required: true },
   email: { type: String },
   phone: { type: String },
@@ -51,4 +51,4 @@ studentSchema.index({ phone: 1 }, { unique: true, sparse: true });
 studentSchema.index({ googleId: 1 });
 studentSchema.index({ facebookId: 1 });
 
-export const Student = model<TStudent>("Student", studentSchema);
+export const Student = model<TUser>("User", studentSchema);

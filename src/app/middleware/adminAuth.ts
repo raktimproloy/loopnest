@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import { verifyAccessToken } from '../../utils/jwt';
-import { Admin } from '../modules/admin/admin.model';
+import { Student as User } from '../modules/student/student.model';
 
 const adminAuth = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -29,17 +29,17 @@ const adminAuth = () => {
         });
       }
 
-      // Check if the token is for admin (has adminId property)
-      if (!('adminId' in decoded)) {
+      // Require userId in token; role will be verified from DB
+      if (!('userId' in decoded)) {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid admin token',
         });
       }
 
-      // Check if admin exists and is active
-      const admin = await Admin.findById(decoded.adminId);
-      if (!admin || admin.isDeleted || !admin.isActive) {
+      // Check if user exists and is admin
+      const user = await User.findById((decoded as any).userId);
+      if (!user || user.isDeleted || user.status !== 'active' || user.role !== 'admin') {
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid admin token',
@@ -48,11 +48,11 @@ const adminAuth = () => {
 
       // Add admin info to request
       req.admin = {
-        adminId: admin._id.toString(),
-        email: admin.email,
-        role: admin.role,
-        permissions: admin.permissions,
-      };
+        userId: user._id.toString(),
+        email: user.email || '',
+        role: user.role,
+        registrationType: user.registrationType,
+      } as any;
 
       next();
     } catch (error) {
@@ -95,15 +95,15 @@ const requirePermission = (permission: string) => {
       });
     }
 
-    if (!req.admin.permissions.includes(permission)) {
-      return res.status(httpStatus.FORBIDDEN).json({
-        success: false,
-        message: 'Insufficient permissions',
-      });
-    }
+    // if (!req.admin.permissions.includes(permission)) {
+    //   return res.status(httpStatus.FORBIDDEN).json({
+    //     success: false,
+    //     message: 'Insufficient permissions',
+    //   });
+    // }
 
     next();
   };
 };
 
-export { adminAuth, requireRole, requirePermission };
+export { adminAuth };

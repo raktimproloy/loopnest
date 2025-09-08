@@ -4,6 +4,35 @@ import httpStatus from "http-status";
 import { StudentServices } from "./student.service";
 import config from "../../config";
 
+// Build cookie options that work on localhost and any *.vercel.app domain
+const getCookieOptions = (req: any) => {
+  const isProd = config.node_env === 'production';
+  const origin = req.headers?.origin as string | undefined;
+  let host: string | undefined;
+  try {
+    if (origin) host = new URL(origin).hostname;
+  } catch (_e) {
+    // ignore
+  }
+  host = host || req.hostname;
+
+  let domain: string | undefined;
+  if (host && /\.vercel\.app$/i.test(host)) {
+    domain = '.vercel.app';
+  } else if (host === 'localhost' || host === '127.0.0.1') {
+    domain = undefined; // required for localhost cookies to set properly
+  }
+
+  const base = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    path: '/',
+  } as any;
+  if (domain) base.domain = domain;
+  return base;
+};
+
 const manualRegister = catchAsync(async (req, res) => {
   const result = await StudentServices.manualRegisterStudent(req.body);
   
@@ -18,13 +47,7 @@ const manualRegister = catchAsync(async (req, res) => {
 const login = catchAsync(async (req, res) => {
   const result = await StudentServices.loginStudent(req.body);
 
-  const isProd = config.node_env === 'production';
-  const cookieOptions = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    path: '/',
-  } as any;
+  const cookieOptions = getCookieOptions(req);
 
   // 7d for access, 30d for refresh
   res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
@@ -41,13 +64,7 @@ const login = catchAsync(async (req, res) => {
 const socialLogin = catchAsync(async (req, res) => {
   const result = await StudentServices.socialLoginStudent(req.body);
 
-  const isProd = config.node_env === 'production';
-  const cookieOptions = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    path: '/',
-  } as any;
+  const cookieOptions = getCookieOptions(req);
 
   res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
   res.cookie('refreshToken', result.refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
@@ -87,13 +104,7 @@ const refreshToken = catchAsync(async (req, res) => {
   const tokenToUse = req.body.refreshToken || refreshTokenCookie || '';
   const result = await StudentServices.refreshAccessToken(tokenToUse);
 
-  const isProd = config.node_env === 'production';
-  const cookieOptions = {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
-    path: '/',
-  } as any;
+  const cookieOptions = getCookieOptions(req);
 
   res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
   
@@ -153,13 +164,7 @@ export const studentController = {
   getProfile,
   updateProfile,
   logout: catchAsync(async (req, res) => {
-    const isProd = config.node_env === 'production';
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: '/',
-    } as any;
+    const cookieOptions = getCookieOptions(req);
 
     res.clearCookie('accessToken', cookieOptions);
     res.clearCookie('refreshToken', cookieOptions);

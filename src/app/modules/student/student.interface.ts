@@ -3,7 +3,7 @@ export type TStudent = {
   email?: string;
   phone?: string;
   password?: string;
-  role: 'student' | 'mentor';
+  role: 'student' | 'mentor' | 'admin';
   registrationType: 'manual' | 'google' | 'facebook';
   emailVerified: boolean;
   otpCode?: string;
@@ -17,6 +17,9 @@ export type TStudent = {
   updatedAt: Date;
   isDeleted: boolean;
 };
+
+// Unified user type alias for clarity
+export type TUser = TStudent;
 
 export type TLoginCredentials = {
   email: string;
@@ -34,5 +37,6 @@ export type TSocialLoginData = {
 export type TJWTPayload = {
   userId: string;
   email: string;
+  role: string;
   registrationType: string;
 };

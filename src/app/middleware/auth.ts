@@ -52,6 +52,7 @@ const auth = () => {
         userId: student._id.toString(),
         email: student.email || '',
         registrationType: student.registrationType,
+        role: student.role,
       };
 
       next();

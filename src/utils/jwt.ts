@@ -1,10 +1,9 @@
 import jwt from 'jsonwebtoken';
 import config from '../app/config';
 import { TJWTPayload } from '../app/modules/student/student.interface';
-import { TAdminJWTPayload } from '../app/modules/admin/admin.interface';
 
-// Union type for both student and admin JWT payloads
-type TJWTTokenPayload = TJWTPayload | TAdminJWTPayload;
+// Unified JWT payload
+type TJWTTokenPayload = TJWTPayload;
 
 export const createAccessToken = (payload: TJWTTokenPayload) => {
   return jwt.sign(payload, config.jwt_secret || 'default-secret', { expiresIn: '7d' });
