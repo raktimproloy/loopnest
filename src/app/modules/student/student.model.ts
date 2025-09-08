@@ -6,6 +6,11 @@ const studentSchema = new Schema<TStudent>({
   email: { type: String },
   phone: { type: String },
   password: { type: String },
+  role: {
+    type: String,
+    enum: ['student', 'mentor'],
+    default: 'student',
+  },
   registrationType: { 
     type: String, 
     enum: ['manual', 'google', 'facebook'], 

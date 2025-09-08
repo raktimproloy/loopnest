@@ -152,6 +152,25 @@ export const studentController = {
   refreshToken,
   getProfile,
   updateProfile,
+  logout: catchAsync(async (req, res) => {
+    const isProd = config.node_env === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
+    } as any;
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Logged out successfully",
+      data: null,
+    });
+  }),
   updateProfileImage: catchAsync(async (req, res) => {
     if (!req.user?.userId) {
       return res.status(httpStatus.UNAUTHORIZED).json({

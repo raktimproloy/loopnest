@@ -55,6 +55,12 @@ router.delete(
   adminController.deleteAdmin
 );
 
+router.post(
+  "/logout",
+  adminAuth(),
+  adminController.logout
+);
+
 // Student Management Routes (Admin Only)
 router.get(
   "/students",

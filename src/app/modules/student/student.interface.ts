@@ -3,6 +3,7 @@ export type TStudent = {
   email?: string;
   phone?: string;
   password?: string;
+  role: 'student' | 'mentor';
   registrationType: 'manual' | 'google' | 'facebook';
   emailVerified: boolean;
   otpCode?: string;

@@ -2,9 +2,16 @@ import catchAsync from "../../../utils/catchAsync";
 import sendResponse from "../../../utils/sendResponse";
 import { CourseServices } from "./course.service";
 import httpStatus from "http-status";
+import config from "../../config";
 
 const createCourse = catchAsync(async (req, res) => {
-  const result = await CourseServices.createCourse(req.body);
+  const file = (req as any).file as any;
+  let payload = req.body as any;
+  if (file) {
+    const baseUrl = (config.base_url || '').replace(/\/$/, '');
+    payload = { ...payload, imageUrl: `${baseUrl}/public/uploads/course/${file.filename}` };
+  }
+  const result = await CourseServices.createCourse(payload);
   
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -48,7 +55,13 @@ const getCourseBySlug = catchAsync(async (req, res) => {
 });
 
 const updateCourse = catchAsync(async (req, res) => {
-  const result = await CourseServices.updateCourse(req.params.id, req.body);
+  const file = (req as any).file as any;
+  let payload = req.body as any;
+  if (file) {
+    const baseUrl = (config.base_url || '').replace(/\/$/, '');
+    payload = { ...payload, imageUrl: `${baseUrl}/public/uploads/course/${file.filename}` };
+  }
+  const result = await CourseServices.updateCourse(req.params.id, payload);
   
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -35,7 +35,6 @@ const courseSchema = new Schema<TCourse>({
   instructors: [instructorSchema],
   courseFeatures: [{ type: String }],
   courseModules: [courseModuleSchema],
-  assignments: [{ type: String }],
   projects: [{ type: String }],
   isPublished: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },

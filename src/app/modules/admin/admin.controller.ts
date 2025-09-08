@@ -226,4 +226,23 @@ export const adminController = {
   getStudentById,
   updateStudent,
   deleteStudent,
+  logout: catchAsync(async (req, res) => {
+    const isProd = config.node_env === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
+    } as any;
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Admin logged out successfully",
+      data: null,
+    });
+  }),
 };

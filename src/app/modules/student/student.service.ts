@@ -30,6 +30,7 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   // Build a clean creation payload (avoid unintended fields like empty strings)
   const creationData: Partial<TStudent> = {
     fullName: payload.fullName,
+    role: 'student',
     registrationType: 'manual',
     email: normalizedEmail,
     phone: normalizedPhone,
@@ -211,6 +212,7 @@ export const socialLoginStudent = async (socialData: TSocialLoginData) => {
       fullName: socialData.fullName,
       email: socialData.email,
       profileImage: socialData.profileImage,
+      role: 'student',
       registrationType: socialData.registrationType,
       emailVerified: true, // Social logins are pre-verified
       status: 'active',
@@ -435,7 +437,7 @@ export const updateStudentByAdmin = async (studentId: string, updateData: Partia
   }
 
   // Allow updating all fields except password and OTP
-  const allowedFields = ['fullName', 'email', 'phone', 'status', 'emailVerified', 'profileImage'];
+  const allowedFields = ['fullName', 'email', 'phone', 'status', 'emailVerified', 'profileImage', 'role'];
   const filteredUpdateData: any = {};
   
   allowedFields.forEach(field => {

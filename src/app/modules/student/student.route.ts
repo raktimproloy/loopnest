@@ -94,4 +94,10 @@ router.put(
   studentController.updateProfileImage
 );
 
+router.post(
+  "/logout",
+  auth(),
+  studentController.logout
+);
+
 export const StudentRoutes = router;

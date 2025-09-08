@@ -32,7 +32,6 @@ export type TCourse = {
   instructors: TInstructor[];
   courseFeatures: string[];
   courseModules: TCourseModule[];
-  assignments: string[];
   projects: string[];
   isPublished: boolean;
   isDeleted: boolean;
@@ -53,7 +52,6 @@ export type TCourseCreateData = {
   instructors: TInstructor[];
   courseFeatures: string[];
   courseModules: TCourseModule[];
-  assignments: string[];
   projects: string[];
 };
 
@@ -70,7 +68,6 @@ export type TCourseUpdateData = {
   instructors?: TInstructor[];
   courseFeatures?: string[];
   courseModules?: TCourseModule[];
-  assignments?: string[];
   projects?: string[];
   isPublished?: boolean;
 };
