@@ -31,15 +31,10 @@ const allowedOriginPatterns = [
 app.use(express.json());
 // Serve static files from public directory
 app.use("/public", express.static(path.join(process.cwd(), "public")));
+// Allow all origins (with credentials) - relaxed CORS for development/any domain
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      if (allowedOriginPatterns.some((re) => re.test(origin))) return callback(null, true);
-      callback(new Error("Not allowed by CORS"));
-    },
+    origin: true,
     credentials: true,
   })
 );
