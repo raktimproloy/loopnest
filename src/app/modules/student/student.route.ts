@@ -54,7 +54,7 @@ router.post(
   validateRequest(StudentValidation.socialLoginValidationSchema),
   studentController.socialLogin
 );
-
+// 
 router.post(
   "/verify-otp",
   validateRequest(StudentValidation.verifyOTPValidationSchema),
