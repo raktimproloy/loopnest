@@ -25,7 +25,12 @@ export const listPaymentsForAdmin = async (query: any) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Payment.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Payment.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('userId')
+      .populate('courseId'),
     Payment.countDocuments(filter),
   ]);
 
@@ -41,7 +46,12 @@ export const listPaymentsForUser = async (userId: string, query: any) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Payment.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Payment.find({ userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('userId')
+      .populate('courseId'),
     Payment.countDocuments({ userId }),
   ]);
 
@@ -52,7 +62,9 @@ export const listPaymentsForUser = async (userId: string, query: any) => {
 };
 
 export const getPaymentById = async (userId: string, id: string) => {
-  const payment = await Payment.findOne({ _id: id, userId });
+  const payment = await Payment.findOne({ _id: id, userId })
+    .populate('userId')
+    .populate('courseId');
   if (!payment) throw new AppError(httpStatus.NOT_FOUND, 'Payment not found');
   return payment;
 };
