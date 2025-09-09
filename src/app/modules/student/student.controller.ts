@@ -4,30 +4,23 @@ import httpStatus from "http-status";
 import { StudentServices } from "./student.service";
 import config from "../../config";
 
-// Build cookie options that work on localhost and any *.vercel.app domain
+// Build cookie options that are static for localhost and *.vercel.app
 const getCookieOptions = (req: any) => {
   const isProd = config.node_env === 'production';
-  const origin = req.headers?.origin as string | undefined;
-  let host: string | undefined;
-  try {
-    if (origin) host = new URL(origin).hostname;
-  } catch (_e) {
-    // ignore
-  }
-  host = host || req.hostname;
+  const host = req.hostname as string | undefined;
 
-  let domain: string | undefined;
-  const isVercel = !!(host && /\.vercel\.app$/i.test(host));
-  if (isVercel) {
-    domain = '.vercel.app';
-  } else if (host === 'localhost' || host === '127.0.0.1') {
-    domain = undefined; // required for localhost cookies to set properly
-  }
+  // Decide if we should target vercel.app domain statically
+  const baseUrl = (config.base_url || '').toLowerCase();
+  const isVercelHost = (host && /\.vercel\.app$/i.test(host)) || /\.vercel\.app$/i.test(baseUrl);
+
+  // For vercel: set Domain to .vercel.app to cover all subdomains
+  // For localhost: do NOT set Domain (must be undefined) to be accepted by browsers
+  const domain = isVercelHost ? '.vercel.app' : undefined;
 
   const base = {
     httpOnly: true,
-    secure: isProd || isVercel,
-    sameSite: (isVercel || isProd) ? 'none' : 'lax',
+    secure: isProd || isVercelHost,
+    sameSite: (isProd || isVercelHost) ? 'none' : 'lax',
     path: '/',
   } as any;
   if (domain) base.domain = domain;
