@@ -4,7 +4,9 @@ import sendResponse from "../../../utils/sendResponse";
 import { ModuleServices } from "./module.service";
 
 export const createModule = catchAsync(async (req, res) => {
-  const result = await ModuleServices.createModuleIntoDb(req.body);
+  // Force creatorId from authenticated admin token
+  const payload = { ...req.body, creatorId: req.admin?.userId } as any;
+  const result = await ModuleServices.createModuleIntoDb(payload);
   if (result) {
     sendResponse(res, {
       statusCode: httpStatus.CREATED,

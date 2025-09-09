@@ -6,19 +6,6 @@ import { Module } from "./module.model";
 import httpStatus from "http-status";
 
 export const createModuleIntoDb = async (payload: TModule) => {
-  // Check if same module already has a module with this title
-  const isExistBlog = await Module.findOne({
-    title: payload.title,
-    isDeleted: false,
-  });
-
-  if (isExistBlog) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Coupon with this code already exists"
-    );
-  }
-
   // Create new Module
   const newModule = await Module.create(payload);
   return newModule;
@@ -33,19 +20,35 @@ export const getSingleModuleFromDb = async (id: string) => {
 };
 
 export const getAllBlogsFromDb = async (query: Record<string, unknown>) => {
-  const moduleQuery = new QueryBuilder(Module.find().populate("userId"), query)
-    .search(ModuleSearchableFields)
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
+  // Allow filtering by courseId and isPublished explicitly
+  const filter: any = { isDeleted: false };
+  if (query.courseId) filter.courseId = query.courseId;
+  if (query.isPublished !== undefined) filter.isPublished = String(query.isPublished) === 'true';
 
-  const result = await moduleQuery.modelQuery.exec();
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
 
-  const { page, limit, total, totalPage } = await moduleQuery.countTotal();
+  const sort = (query.sort as string)?.split(',').join(' ') || '-createdAt';
+  const fields = (query.fields as string)?.split(',').join(' ') || '-__v';
+
+  const [items, total] = await Promise.all([
+    Module.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .select(fields),
+    Module.countDocuments(filter),
+  ]);
+
   return {
-    meta: { page, limit, total, totalPage },
-    data: result,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+    data: items,
   };
 };
 

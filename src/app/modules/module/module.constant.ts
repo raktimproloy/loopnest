@@ -1,1 +1,1 @@
-export const ModuleSearchableFields = ["title", "lesson1", "lesson2"];
+export const ModuleSearchableFields = ["title", "lessons"];

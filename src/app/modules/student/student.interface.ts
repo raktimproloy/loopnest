@@ -13,6 +13,7 @@ export type TStudent = {
   googleId?: string;
   facebookId?: string;
   lastLogin?: Date;
+  activeCourses?: string[];
   createdAt: Date;
   updatedAt: Date;
   isDeleted: boolean;

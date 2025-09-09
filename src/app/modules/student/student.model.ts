@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 import { TUser } from "./student.interface";
 
 const studentSchema = new Schema<TUser>({
@@ -28,6 +28,7 @@ const studentSchema = new Schema<TUser>({
   googleId: { type: String },
   facebookId: { type: String },
   lastLogin: { type: Date },
+  activeCourses: [{ type: Types.ObjectId, ref: 'Course', default: [] }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   isDeleted: { type: Boolean, default: false },

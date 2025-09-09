@@ -1,16 +1,14 @@
 export type TModule = {
   title: string;
-  course: string;
-  lessons: TLesson[];
-  userId: string;
+  courseId: string; // relation to Course _id
+  lessons: string[];
+  creatorId: string; // relation to User _id
+  duration: string;
+  resourceLink?: string;
+  assignments: string[];
+  videoLink?: string;
   createdAt: Date;
   updatedAt: Date;
   isDeleted: boolean;
   isPublished: boolean;
-};
-
-export type TLesson = {
-  lesson1: string;
-  lesson2: string;
-  description: string;
 };
