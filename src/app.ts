@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
 import path from "path";
+import mongoose from "mongoose";
 import router from "./app/routes";
 import globalErrorHandler from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFound";
@@ -39,6 +40,27 @@ app.use(
   })
 );
 app.use(cookieParser());
+
+// Ensure MongoDB connection on serverless (Vercel) before handling requests
+const connectMongoOnce = async () => {
+  if (!config.database_url) return;
+  if (mongoose.connection.readyState === 1) return;
+  if ((global as any).__mongooseConnPromise) {
+    await (global as any).__mongooseConnPromise;
+    return;
+  }
+  (global as any).__mongooseConnPromise = mongoose.connect(config.database_url as string);
+  await (global as any).__mongooseConnPromise;
+};
+
+app.use(async (_req, _res, next) => {
+  try {
+    await connectMongoOnce();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Application Routes
 app.use("/api/v1/", router);
