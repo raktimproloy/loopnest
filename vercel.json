@@ -1,15 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/app.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "dist/app.js"
-    }
-  ]
+  "builds": [{ "src": "dist/app.js", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "dist/app.js" }],
+  "installCommand": "yarn",
+  "buildCommand": "yarn build"
 }

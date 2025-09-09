@@ -11,7 +11,8 @@
     "start": "node ./dist/server.js",
     "format": "prettier --ignore-path .gitignore --write \"./src**/*.+(js|ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "vercel-build": "yarn build"
   },
   "keywords": [],
   "author": "",
