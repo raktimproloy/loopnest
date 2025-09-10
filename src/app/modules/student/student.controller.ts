@@ -27,21 +27,21 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
   })
 
   // // Set cookies for localhost (no domain)
-  // res.cookie('accessToken', accessToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/',
-  //   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  // });
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
   
-  // res.cookie('refreshToken', refreshToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/',
-  //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  // });
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  });
 
   // // Set cookies for vercel.app domain
   // res.cookie('accessToken', accessToken, {
@@ -84,19 +84,19 @@ const clearAuthCookies = (res: any, req: any) => {
   })
 
   // // Clear localhost cookies
-  // res.clearCookie('accessToken', {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/'
-  // });
+  res.clearCookie('accessToken', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/'
+  });
   
-  // res.clearCookie('refreshToken', {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/'
-  // });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    path: '/'
+  });
 
   // // Clear vercel.app cookies
   // res.clearCookie('accessToken', {
