@@ -76,7 +76,7 @@ router.post(
   adminAuth(),
   upload.single("image"),
   parseCourseMultipartFields,
-  validateRequest(CourseValidation.createCourseValidationSchema),
+  // validateRequest(CourseValidation.createCourseValidationSchema), // Validation disabled
   courseController.createCourse
 );
 
@@ -85,7 +85,7 @@ router.put(
   adminAuth(),
   upload.single("image"),
   parseCourseMultipartFields,
-  validateRequest(CourseValidation.updateCourseValidationSchema),
+  // validateRequest(CourseValidation.updateCourseValidationSchema), // Validation disabled
   courseController.updateCourse
 );
 

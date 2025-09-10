@@ -6,6 +6,12 @@ import { Student as User } from '../modules/student/student.model';
 const adminAuth = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Debug: Log all cookies and headers
+      console.log('[ADMIN AUTH] Request cookies:', (req as any).cookies);
+      console.log('[ADMIN AUTH] Authorization header:', req.headers.authorization);
+      console.log('[ADMIN AUTH] Request URL:', req.url);
+      console.log('[ADMIN AUTH] Request method:', req.method);
+      
       // Check for access token in multiple cookie names and Authorization header
       const tokenFromCookie = (req as any).cookies?.accessToken || 
                             (req as any).cookies?.accessToken_localhost || 
@@ -13,10 +19,21 @@ const adminAuth = () => {
       const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
       const token = tokenFromCookie || tokenFromHeader;
       
+      console.log('[ADMIN AUTH] Token from cookie:', tokenFromCookie ? 'Found' : 'Not found');
+      console.log('[ADMIN AUTH] Token from header:', tokenFromHeader ? 'Found' : 'Not found');
+      console.log('[ADMIN AUTH] Final token:', token ? 'Found' : 'Not found');
+      
       if (!token) {
+        console.log('[ADMIN AUTH] ❌ No token found');
         return res.status(httpStatus.UNAUTHORIZED).json({
           success: false,
           message: 'Admin access token is required',
+          debug: {
+            cookies: Object.keys((req as any).cookies || {}),
+            hasAuthHeader: !!req.headers.authorization,
+            url: req.url,
+            method: req.method
+          }
         });
       }
 
