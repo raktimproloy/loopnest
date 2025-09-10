@@ -7,8 +7,10 @@ import { Student } from '../modules/student/student.model';
 const auth = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Prefer cookie-based token; fallback to Authorization header
-      const tokenFromCookie = (req as any).cookies?.accessToken as string | undefined;
+      // Check for access token in multiple cookie names and Authorization header
+      const tokenFromCookie = (req as any).cookies?.accessToken || 
+                            (req as any).cookies?.accessToken_localhost || 
+                            (req as any).cookies?.accessToken_vercel;
       const tokenFromHeader = req.headers.authorization?.replace('Bearer ', '');
       const token = tokenFromCookie || tokenFromHeader;
       
