@@ -13,13 +13,12 @@ const courseModuleSchema = new Schema({
   lessons: [{ type: String, required: true }],
 }, { _id: false });
 
-const statisticsSchema = new Schema({
-  enrolledStudents: { type: Number, required: true, default: 0 },
-  moduleCount: { type: Number, required: true, default: 0 },
-  projectCount: { type: Number, required: true, default: 0 },
-  assignmentCount: { type: Number, required: true, default: 0 },
-  price: { type: Number, required: true, default: 0 },
-  originalPrice: { type: Number, required: true, default: 0 },
+const courseFeatureSchema = new Schema({
+  value: { type: String, required: true },
+}, { _id: false });
+
+const projectSchema = new Schema({
+  name: { type: String, required: true },
 }, { _id: false });
 
 const courseSchema = new Schema<TCourse>({
@@ -31,11 +30,16 @@ const courseSchema = new Schema<TCourse>({
   videoUrl: { type: String },
   courseType: { type: String, required: true },
   upcomingCourse: { type: Number, required: false, default: 0 },
-  statistics: { type: statisticsSchema, required: true },
+  enrolledStudents: { type: Number, required: true, default: 0 },
+  moduleCount: { type: Number, required: true, default: 0 },
+  projectCount: { type: Number, required: true, default: 0 },
+  assignmentCount: { type: Number, required: true, default: 0 },
+  price: { type: Number, required: true, default: 0 },
+  originalPrice: { type: Number, required: true, default: 0 },
   instructors: [instructorSchema],
-  courseFeatures: [{ type: String }],
+  courseFeatures: [courseFeatureSchema],
   courseModules: [courseModuleSchema],
-  projects: [{ type: String }],
+  projects: [projectSchema],
   isPublished: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },

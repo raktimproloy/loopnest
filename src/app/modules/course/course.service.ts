@@ -28,12 +28,33 @@ export const createCourse = async (payload: TCourseCreateData) => {
 
     console.log('[COURSE SERVICE] Final upcomingCourse value:', upcomingCourseValue, 'type:', typeof upcomingCourseValue);
 
-    // Ensure upcomingCourse has a default value if not provided
+    // Ensure all numeric fields have default values
     const courseData = {
       ...payload,
       upcomingCourse: upcomingCourseValue,
+      enrolledStudents: payload.enrolledStudents ?? 0,
+      moduleCount: payload.moduleCount ?? 0,
+      projectCount: payload.projectCount ?? 0,
+      assignmentCount: payload.assignmentCount ?? 0,
+      price: payload.price ?? 0,
+      originalPrice: payload.originalPrice ?? 0,
       isPublished: true,
     };
+
+    console.log('[COURSE SERVICE] Course data being created:', {
+      title: courseData.title,
+      enrolledStudents: courseData.enrolledStudents,
+      moduleCount: courseData.moduleCount,
+      projectCount: courseData.projectCount,
+      assignmentCount: courseData.assignmentCount,
+      price: courseData.price,
+      originalPrice: courseData.originalPrice,
+      upcomingCourse: courseData.upcomingCourse,
+      instructorsCount: courseData.instructors?.length || 0,
+      courseFeaturesCount: courseData.courseFeatures?.length || 0,
+      courseModulesCount: courseData.courseModules?.length || 0,
+      projectsCount: courseData.projects?.length || 0,
+    });
 
     // Create new course - let MongoDB handle duplicate key constraint
     const newCourse = await Course.create(courseData);

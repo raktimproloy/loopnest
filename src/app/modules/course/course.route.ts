@@ -86,7 +86,7 @@ const parseCourseMultipartFields: express.RequestHandler = (req, _res, next) => 
     };
 
     // Expected JSON fields
-    ['statistics', 'instructors', 'courseFeatures', 'courseModules', 'projects'].forEach(parseIfString);
+    ['instructors', 'courseFeatures', 'courseModules', 'projects'].forEach(parseIfString);
 
     next();
   } catch (_err) {

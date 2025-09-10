@@ -19,6 +19,14 @@ export type TCourseStatistics = {
   originalPrice: number;
 };
 
+export type TCourseFeature = {
+  value: string;
+};
+
+export type TProject = {
+  name: string;
+};
+
 export type TCourse = {
   title: string;
   batchName: string;
@@ -28,11 +36,16 @@ export type TCourse = {
   videoUrl?: string;
   courseType: string;
   upcomingCourse?: number;
-  statistics: TCourseStatistics;
+  enrolledStudents: number;
+  moduleCount: number;
+  projectCount: number;
+  assignmentCount: number;
+  price: number;
+  originalPrice: number;
   instructors: TInstructor[];
-  courseFeatures: string[];
+  courseFeatures: TCourseFeature[];
   courseModules: TCourseModule[];
-  projects: string[];
+  projects: TProject[];
   isPublished: boolean;
   isDeleted: boolean;
   createdAt: Date;
@@ -47,12 +60,17 @@ export type TCourseCreateData = {
   imageUrl: string;
   videoUrl?: string;
   courseType: string;
-  upcomingCourse?: number;
-  statistics: TCourseStatistics;
+  upcomingCourse?: number | string | boolean; // Allow different types from frontend
+  enrolledStudents: number;
+  moduleCount: number;
+  projectCount: number;
+  assignmentCount: number;
+  price: number;
+  originalPrice: number;
   instructors: TInstructor[];
-  courseFeatures: string[];
+  courseFeatures: TCourseFeature[];
   courseModules: TCourseModule[];
-  projects: string[];
+  projects: TProject[];
 };
 
 export type TCourseUpdateData = {
@@ -63,11 +81,16 @@ export type TCourseUpdateData = {
   imageUrl?: string;
   videoUrl?: string;
   courseType?: string;
-  upcomingCourse?: number;
-  statistics?: TCourseStatistics;
+  upcomingCourse?: number | string | boolean;
+  enrolledStudents?: number;
+  moduleCount?: number;
+  projectCount?: number;
+  assignmentCount?: number;
+  price?: number;
+  originalPrice?: number;
   instructors?: TInstructor[];
-  courseFeatures?: string[];
+  courseFeatures?: TCourseFeature[];
   courseModules?: TCourseModule[];
-  projects?: string[];
+  projects?: TProject[];
   isPublished?: boolean;
 };

@@ -29,6 +29,14 @@ const createCourse = catchAsync(async (req, res) => {
   } else {
     payload.upcomingCourse = 0;
   }
+
+  // Ensure all numeric fields have default values
+  payload.enrolledStudents = payload.enrolledStudents ?? 0;
+  payload.moduleCount = payload.moduleCount ?? 0;
+  payload.projectCount = payload.projectCount ?? 0;
+  payload.assignmentCount = payload.assignmentCount ?? 0;
+  payload.price = payload.price ?? 0;
+  payload.originalPrice = payload.originalPrice ?? 0;
   
   console.log('[COURSE CONTROLLER] Processed payload upcomingCourse:', payload.upcomingCourse, 'type:', typeof payload.upcomingCourse);
   
