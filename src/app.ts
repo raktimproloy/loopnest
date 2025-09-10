@@ -7,6 +7,7 @@ import router from "./app/routes";
 import globalErrorHandler from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFound";
 import config from "./app/config";
+import { validateSMTPConfig, getSMTPConfigurationGuide } from "./utils/emailService";
 
 const app = express();
 
@@ -86,6 +87,44 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
+
+// Validate SMTP configuration at startup
+validateSMTPConfig();
+
+// Display SMTP configuration guide if needed
+if (config.node_env === 'development') {
+  console.log('\n=== LoopNest SMTP Configuration Guide ===');
+  const guide = getSMTPConfigurationGuide();
+  console.log(`\n📧 ${guide.title}`);
+  console.log(`📝 ${guide.description}\n`);
+  
+  console.log('🔧 Common SMTP Providers:');
+  Object.entries(guide.providers).forEach(([name, config]) => {
+    console.log(`\n  ${name.toUpperCase()}:`);
+    console.log(`    Host: ${config.host}`);
+    console.log(`    Port: ${config.port}`);
+    console.log(`    Secure: ${config.secure}`);
+    console.log(`    User: ${config.auth.user}`);
+    console.log(`    Notes: ${config.notes}`);
+  });
+  
+  console.log('\n🛡️ Anti-Spam Measures:');
+  Object.entries(guide.antiSpam).forEach(([key, value]) => {
+    console.log(`  ${key.toUpperCase()}: ${value}`);
+  });
+  
+  console.log('\n📋 Environment Variables:');
+  Object.entries(guide.env_vars).forEach(([key, value]) => {
+    console.log(`  ${key}: ${value}`);
+  });
+  
+  console.log('\n✅ Best Practices:');
+  guide.best_practices.forEach((practice, index) => {
+    console.log(`  ${index + 1}. ${practice}`);
+  });
+  
+  console.log('\n==========================================\n');
+}
 
 // Parsers
 app.use(express.json());

@@ -115,10 +115,20 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
 
   // Send OTP email only if email present
   if (otpEnabled) {
+    console.log(`[STUDENT REGISTER] Sending OTP email to: ${creationData.email}`);
     const emailResult = await sendOTPEmail(creationData.email!, otpCode!, payload.fullName!);
-    if (!emailResult.success) {
+    
+    if (emailResult.success) {
+      console.log(`[STUDENT REGISTER] ✅ OTP email sent successfully to ${creationData.email}`);
+      console.log(`[STUDENT REGISTER] Message ID: ${emailResult.messageId}`);
+    } else {
+      console.log(`[STUDENT REGISTER] ❌ Failed to send OTP email to ${creationData.email}`);
+      console.log(`[STUDENT REGISTER] Email error:`, emailResult.error);
+      console.log(`[STUDENT REGISTER] Email details:`, emailResult.details);
       // Email sending failed, but continue with OTP generation
     }
+  } else {
+    console.log(`[STUDENT REGISTER] No email provided, skipping OTP email sending`);
   }
 
   // Remove sensitive data
@@ -291,8 +301,16 @@ export const resendOTP = async (email: string) => {
   });
 
   // Send OTP email
+  console.log(`[STUDENT RESEND OTP] Sending OTP email to: ${email}`);
   const emailResult = await sendOTPEmail(email, otpCode, student.fullName);
-  if (!emailResult.success) {
+  
+  if (emailResult.success) {
+    console.log(`[STUDENT RESEND OTP] ✅ OTP email sent successfully to ${email}`);
+    console.log(`[STUDENT RESEND OTP] Message ID: ${emailResult.messageId}`);
+  } else {
+    console.log(`[STUDENT RESEND OTP] ❌ Failed to send OTP email to ${email}`);
+    console.log(`[STUDENT RESEND OTP] Email error:`, emailResult.error);
+    console.log(`[STUDENT RESEND OTP] Email details:`, emailResult.details);
     // Email sending failed, but continue with OTP generation
   }
 
