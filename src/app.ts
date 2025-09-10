@@ -63,7 +63,6 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:3002",
-
   "https://loop-nest.vercel.app",
   "https://loop-nest-student-dashboard.vercel.app",
   "https://loop-nest-admin-dashboard.vercel.app",
@@ -71,10 +70,19 @@ const allowedOrigins = [
 // মেক শিওর করিয়েন যে লিংক এর পরে কোন / বা কিচ্ছু নাই, জাস্ট প্লেইন URL
 
 const corsOptions = {
-  origin: allowedOrigins, // function দরকারই নেই
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: [
+    "Content-Type", 
+    "Authorization", 
+    "Cookie",
+    "X-Requested-With",
+    "Accept",
+    "Origin"
+  ],
+  exposedHeaders: ["Set-Cookie"],
+  optionsSuccessStatus: 200
 }
 
 app.use(cors(corsOptions))

@@ -5,115 +5,122 @@ import { StudentServices } from "./student.service";
 import config from "../../config";
 
 
-// Helper function to set authentication cookies for both localhost and vercel.app
+// Helper function to set authentication cookies for cross-domain requests
 const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: string) => {
+  // Get the origin from the request to determine the environment
+  const origin = req.get('origin') || req.get('referer');
+  const isProduction = origin && origin.includes('vercel.app');
+  const isLocalhost = origin && origin.includes('localhost');
 
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: ".vercel.app",
-    maxAge: 86400000,
-    path: "/",
-  })
+  if (isProduction) {
+    // Production: Set cookies for vercel.app domain without specifying domain
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
 
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: ".vercel.app",
-    maxAge: 86400000,
-    path: "/",
-  })
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+  } else if (isLocalhost) {
+    // Development: Set cookies for localhost
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
 
-  // // Set cookies for localhost (no domain)
-  // res.cookie('accessToken', accessToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/',
-  //   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  // });
-  
-  // res.cookie('refreshToken', refreshToken, {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/',
-  //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  // });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+  } else {
+    // Fallback: Set cookies with secure settings
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
 
-  // // Set cookies for vercel.app domain
-  // res.cookie('accessToken', accessToken, {
-  //   httpOnly: true,
-  //   secure: true,
-  //   sameSite: 'none',
-  //   domain: '.vercel.app',
-  //   path: '/',
-  //   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  // });
-  
-  // res.cookie('refreshToken', refreshToken, {
-  //   httpOnly: true,
-  //   secure: true,
-  //   sameSite: 'none',
-  //   domain: '.vercel.app',
-  //   path: '/',
-  //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  // });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+  }
+
 };
 
-// Helper function to clear cookies for both localhost and vercel.app
+// Helper function to clear cookies for cross-domain requests
 const clearAuthCookies = (res: any, req: any) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: ".vercel.app",
-    maxAge: 86400000,
-    path: "/",
-  })
+  // Get the origin from the request to determine the environment
+  const origin = req.get('origin') || req.get('referer');
+  const isProduction = origin && origin.includes('vercel.app');
+  const isLocalhost = origin && origin.includes('localhost');
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: ".vercel.app",
-    maxAge: 86400000,
-    path: "/",
-  })
+  if (isProduction) {
+    // Production: Clear cookies for vercel.app domain without specifying domain
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
 
-  // // Clear localhost cookies
-  // res.clearCookie('accessToken', {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/'
-  // });
-  
-  // res.clearCookie('refreshToken', {
-  //   httpOnly: true,
-  //   secure: false,
-  //   sameSite: 'lax',
-  //   path: '/'
-  // });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+  } else if (isLocalhost) {
+    // Development: Clear cookies for localhost
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      path: "/",
+    });
 
-  // // Clear vercel.app cookies
-  // res.clearCookie('accessToken', {
-  //   httpOnly: true,
-  //   secure: true,
-  //   sameSite: 'none',
-  //   domain: '.vercel.app',
-  //   path: '/'
-  // });
-  
-  // res.clearCookie('refreshToken', {
-  //   httpOnly: true,
-  //   secure: true,
-  //   sameSite: 'none',
-  //   domain: '.vercel.app',
-  //   path: '/'
-  // });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      path: "/",
+    });
+  } else {
+    // Fallback: Clear cookies with secure settings
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+  }
+
 };
 
 const manualRegister = catchAsync(async (req, res) => {
@@ -192,25 +199,39 @@ const refreshToken = catchAsync(async (req, res) => {
   
   const result = await StudentServices.refreshAccessToken(tokenToUse);
 
-  // Set new access token cookie for both localhost and vercel.app
-  // Set for localhost (no domain)
-  res.cookie('accessToken', result.accessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  // Set new access token cookie based on environment
+  const origin = req.get('origin') || req.get('referer');
+  const isProduction = origin && origin.includes('vercel.app');
+  const isLocalhost = origin && origin.includes('localhost');
 
-  // Set for vercel.app domain
-  res.cookie('accessToken', result.accessToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.vercel.app',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  if (isProduction) {
+    // Production: Set cookie for vercel.app domain without specifying domain
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  } else if (isLocalhost) {
+    // Development: Set cookie for localhost
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  } else {
+    // Fallback: Set cookie with secure settings
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  }
   
   sendResponse(res, {
     statusCode: httpStatus.OK,
