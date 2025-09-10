@@ -24,12 +24,12 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
-  // Set cookies for loop-nest.vercel.app domain
+  // Set cookies for vercel.app domain
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.loop-nest.vercel.app',
+    domain: '.vercel.app',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
@@ -38,43 +38,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.loop-nest.vercel.app',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  });
-    // Set cookies for loop-nest.vercel.app domain
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.loop-nest-student-dashboard.vercel.app',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-    
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.loop-nest-student-dashboard.vercel.app',
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
-      // Set cookies for loop-nest.vercel.app domain
-  res.cookie('accessToken', accessToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.loop-nest-admin-dashboard.vercel.app',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
-  
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.loop-nest-admin-dashboard.vercel.app',
+    domain: '.vercel.app',
     path: '/',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
@@ -97,12 +61,12 @@ const clearAuthCookies = (res: any, req: any) => {
     path: '/'
   });
 
-  // Clear loop-nest.vercel.app cookies
+  // Clear vercel.app cookies
   res.clearCookie('accessToken', {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.loop-nest.vercel.app',
+    domain: '.vercel.app',
     path: '/'
   });
   
@@ -110,7 +74,7 @@ const clearAuthCookies = (res: any, req: any) => {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.loop-nest.vercel.app',
+    domain: '.vercel.app',
     path: '/'
   });
 };
@@ -201,12 +165,12 @@ const refreshToken = catchAsync(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
 
-  // Set for loop-nest.vercel.app domain
+  // Set for vercel.app domain
   res.cookie('accessToken', result.accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.loop-nest.vercel.app',
+    domain: '.vercel.app',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
