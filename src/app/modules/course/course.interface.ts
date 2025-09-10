@@ -27,7 +27,7 @@ export type TCourse = {
   imageUrl: string;
   videoUrl?: string;
   courseType: string;
-  upcomingCourse: number;
+  upcomingCourse?: number;
   statistics: TCourseStatistics;
   instructors: TInstructor[];
   courseFeatures: string[];
@@ -47,7 +47,7 @@ export type TCourseCreateData = {
   imageUrl: string;
   videoUrl?: string;
   courseType: string;
-  upcomingCourse: number;
+  upcomingCourse?: number;
   statistics: TCourseStatistics;
   instructors: TInstructor[];
   courseFeatures: string[];

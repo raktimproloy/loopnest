@@ -7,10 +7,36 @@ import config from "../../config";
 const createCourse = catchAsync(async (req, res) => {
   const file = (req as any).file as any;
   let payload = req.body as any;
+  
+  // Debug logging
+  console.log('[COURSE CONTROLLER] Raw payload upcomingCourse:', payload.upcomingCourse, 'type:', typeof payload.upcomingCourse);
+  
+  // Final safety check for upcomingCourse
+  if (payload.upcomingCourse !== undefined && payload.upcomingCourse !== null) {
+    if (typeof payload.upcomingCourse === 'string') {
+      const value = payload.upcomingCourse.toLowerCase().trim();
+      if (value === 'true') {
+        payload.upcomingCourse = 1;
+      } else if (value === 'false' || value === '' || value === 'null' || value === 'undefined') {
+        payload.upcomingCourse = 0;
+      } else {
+        const num = Number(payload.upcomingCourse);
+        payload.upcomingCourse = isNaN(num) ? 0 : num;
+      }
+    } else if (typeof payload.upcomingCourse === 'boolean') {
+      payload.upcomingCourse = payload.upcomingCourse ? 1 : 0;
+    }
+  } else {
+    payload.upcomingCourse = 0;
+  }
+  
+  console.log('[COURSE CONTROLLER] Processed payload upcomingCourse:', payload.upcomingCourse, 'type:', typeof payload.upcomingCourse);
+  
   if (file) {
     const baseUrl = (config.base_url || '').replace(/\/$/, '');
     payload = { ...payload, imageUrl: `${baseUrl}/public/uploads/course/${file.filename}` };
   }
+  
   const result = await CourseServices.createCourse(payload);
   
   sendResponse(res, {

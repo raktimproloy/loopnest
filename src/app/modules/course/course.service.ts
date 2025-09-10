@@ -5,14 +5,42 @@ import httpStatus from 'http-status';
 
 export const createCourse = async (payload: TCourseCreateData) => {
   try {
-    // Create new course - let MongoDB handle duplicate key constraint
-    const newCourse = await Course.create({
+    // Ensure upcomingCourse is always a valid number
+    let upcomingCourseValue = 0;
+    
+    if (payload.upcomingCourse !== undefined && payload.upcomingCourse !== null) {
+      if (typeof payload.upcomingCourse === 'string') {
+        const value = payload.upcomingCourse.toLowerCase().trim();
+        if (value === 'true') {
+          upcomingCourseValue = 1;
+        } else if (value === 'false' || value === '' || value === 'null' || value === 'undefined') {
+          upcomingCourseValue = 0;
+        } else {
+          const num = Number(payload.upcomingCourse);
+          upcomingCourseValue = isNaN(num) ? 0 : num;
+        }
+      } else if (typeof payload.upcomingCourse === 'boolean') {
+        upcomingCourseValue = payload.upcomingCourse ? 1 : 0;
+      } else if (typeof payload.upcomingCourse === 'number') {
+        upcomingCourseValue = payload.upcomingCourse;
+      }
+    }
+
+    console.log('[COURSE SERVICE] Final upcomingCourse value:', upcomingCourseValue, 'type:', typeof upcomingCourseValue);
+
+    // Ensure upcomingCourse has a default value if not provided
+    const courseData = {
       ...payload,
+      upcomingCourse: upcomingCourseValue,
       isPublished: true,
-    });
+    };
+
+    // Create new course - let MongoDB handle duplicate key constraint
+    const newCourse = await Course.create(courseData);
 
     return newCourse;
   } catch (error: any) {
+    console.log('[COURSE SERVICE] Error creating course:', error.message);
     // Handle duplicate key error from MongoDB
     if (error.code === 11000) {
       throw new AppError(

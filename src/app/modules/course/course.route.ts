@@ -38,12 +38,41 @@ const upload = multer({ storage, fileFilter });
 const parseCourseMultipartFields: express.RequestHandler = (req, _res, next) => {
   try {
     const body: any = req.body || {};
+    
+    // Debug logging
+    console.log('[COURSE PARSER] Raw upcomingCourse value:', body.upcomingCourse, 'type:', typeof body.upcomingCourse);
 
-    // Coerce number fields
-    if (typeof body.upcomingCourse === 'string') {
-      const n = Number(body.upcomingCourse);
-      if (!Number.isNaN(n)) body.upcomingCourse = n;
+    // Coerce number fields - handle boolean strings and special cases
+    if (body.upcomingCourse !== undefined && body.upcomingCourse !== null) {
+      if (typeof body.upcomingCourse === 'string') {
+        const value = body.upcomingCourse.toLowerCase().trim();
+        
+        // Handle boolean strings
+        if (value === 'true' || value === 'false') {
+          body.upcomingCourse = value === 'true' ? 1 : 0;
+        } else if (value === '' || value === 'null' || value === 'undefined') {
+          // Handle empty or null strings
+          body.upcomingCourse = 0;
+        } else {
+          // Try to convert to number
+          const n = Number(body.upcomingCourse);
+          if (!Number.isNaN(n)) {
+            body.upcomingCourse = n;
+          } else {
+            // If conversion fails, default to 0
+            body.upcomingCourse = 0;
+          }
+        }
+      } else if (typeof body.upcomingCourse === 'boolean') {
+        // Handle actual boolean values
+        body.upcomingCourse = body.upcomingCourse ? 1 : 0;
+      }
+    } else {
+      // If undefined or null, set to 0
+      body.upcomingCourse = 0;
     }
+    
+    console.log('[COURSE PARSER] Processed upcomingCourse value:', body.upcomingCourse, 'type:', typeof body.upcomingCourse);
 
     // Helper to parse JSON arrays/objects when sent as strings
     const parseIfString = (key: string) => {
