@@ -90,6 +90,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      domain:"localhost",
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -98,6 +99,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      domain:"localhost",
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -108,6 +110,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      domain:"localhost",
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -116,6 +119,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
       httpOnly: true,
       secure: false,
       sameSite: 'lax',
+      domain:"localhost",
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
