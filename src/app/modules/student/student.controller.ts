@@ -7,76 +7,113 @@ import config from "../../config";
 
 // Helper function to set authentication cookies for both localhost and vercel.app
 const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: string) => {
-  // Set cookies for localhost (no domain)
-  res.cookie('accessToken', accessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
-  
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  });
 
-  // Set cookies for vercel.app domain
-  res.cookie('accessToken', accessToken, {
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
-    sameSite: 'none',
-    domain: '.vercel.app',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+    sameSite: "None",
+    domain: ".vercel.app",
+    maxAge: 86400000,
+    path: "/",
+  })
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    domain: ".vercel.app",
+    maxAge: 86400000,
+    path: "/",
+  })
+
+  // // Set cookies for localhost (no domain)
+  // res.cookie('accessToken', accessToken, {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: 'lax',
+  //   path: '/',
+  //   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  // });
   
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.vercel.app',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-  });
+  // res.cookie('refreshToken', refreshToken, {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: 'lax',
+  //   path: '/',
+  //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  // });
+
+  // // Set cookies for vercel.app domain
+  // res.cookie('accessToken', accessToken, {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: 'none',
+  //   domain: '.vercel.app',
+  //   path: '/',
+  //   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  // });
+  
+  // res.cookie('refreshToken', refreshToken, {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: 'none',
+  //   domain: '.vercel.app',
+  //   path: '/',
+  //   maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  // });
 };
 
 // Helper function to clear cookies for both localhost and vercel.app
 const clearAuthCookies = (res: any, req: any) => {
-  // Clear localhost cookies
-  res.clearCookie('accessToken', {
+  res.clearCookie("accessToken", {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/'
-  });
-  
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    path: '/'
-  });
+    secure: true,
+    sameSite: "None",
+    domain: ".vercel.app",
+    maxAge: 86400000,
+    path: "/",
+  })
 
-  // Clear vercel.app cookies
-  res.clearCookie('accessToken', {
+  res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
-    sameSite: 'none',
-    domain: '.vercel.app',
-    path: '/'
-  });
+    sameSite: "None",
+    domain: ".vercel.app",
+    maxAge: 86400000,
+    path: "/",
+  })
+
+  // // Clear localhost cookies
+  // res.clearCookie('accessToken', {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: 'lax',
+  //   path: '/'
+  // });
   
-  res.clearCookie('refreshToken', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    domain: '.vercel.app',
-    path: '/'
-  });
+  // res.clearCookie('refreshToken', {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: 'lax',
+  //   path: '/'
+  // });
+
+  // // Clear vercel.app cookies
+  // res.clearCookie('accessToken', {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: 'none',
+  //   domain: '.vercel.app',
+  //   path: '/'
+  // });
+  
+  // res.clearCookie('refreshToken', {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: 'none',
+  //   domain: '.vercel.app',
+  //   path: '/'
+  // });
 };
 
 const manualRegister = catchAsync(async (req, res) => {
