@@ -9,6 +9,66 @@ import fs from 'fs';
 import path from 'path';
 import config from '../../config';
 
+// Database connection check helper
+const checkDatabaseConnection = () => {
+  const mongoose = require('mongoose');
+  const connectionState = mongoose.connection.readyState;
+  const states = {
+    0: 'disconnected',
+    1: 'connected', 
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  
+  console.log(`[DATABASE] Connection state: ${states[connectionState as keyof typeof states]} (${connectionState})`);
+  
+  if (connectionState !== 1) {
+    throw new AppError(httpStatus.SERVICE_UNAVAILABLE, 'Database connection is not ready. Please try again.');
+  }
+};
+
+// Database operation retry helper
+const retryDatabaseOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = 3
+): Promise<T> => {
+  let lastError: any = null;
+  
+  // Check database connection before attempting operation
+  checkDatabaseConnection();
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[DATABASE] Attempt ${attempt}/${maxRetries} - ${operationName}`);
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      console.log(`[DATABASE] ❌ Attempt ${attempt}/${maxRetries} failed for ${operationName}:`, error.message);
+      
+      // Check if it's a timeout or connection error
+      if (error.message?.includes('buffering timed out') || 
+          error.message?.includes('connection') ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('ECONNREFUSED') ||
+          error.message?.includes('ENOTFOUND')) {
+        
+        if (attempt < maxRetries) {
+          const delay = attempt * 1000; // Exponential backoff
+          console.log(`[DATABASE] Retrying ${operationName} in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+      
+      // If it's not a retryable error or we're out of retries, throw
+      throw error;
+    }
+  }
+  
+  throw lastError;
+};
+
 export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_input?: string }) => {
   // Normalize and classify auth input strictly as email or phone
   const authInputRaw = (payload.auth_input || '').trim();
@@ -42,7 +102,10 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
 
   // Existence checks per-field to ensure accurate messaging
   if (creationData.email) {
-    const existingByEmail = await Student.findOne({ email: creationData.email, isDeleted: false });
+    const existingByEmail = await retryDatabaseOperation(
+      () => Student.findOne({ email: creationData.email, isDeleted: false }),
+      'findOne by email'
+    );
     if (existingByEmail) {
       // eslint-disable-next-line no-console
       console.log('[student.register] existingStudent found by email', { email: creationData.email });
@@ -54,7 +117,10 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   }
 
   if (creationData.phone) {
-    const existingByPhone = await Student.findOne({ phone: creationData.phone, isDeleted: false });
+    const existingByPhone = await retryDatabaseOperation(
+      () => Student.findOne({ phone: creationData.phone, isDeleted: false }),
+      'findOne by phone'
+    );
     if (existingByPhone) {
       // eslint-disable-next-line no-console
       console.log('[student.register] existingStudent found by phone', { phone: creationData.phone });
@@ -78,15 +144,18 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   // Create student
   let newStudent;
   try {
-    newStudent = await Student.create({
-      ...creationData,
-      password: hashedPassword,
-      registrationType: 'manual',
-      emailVerified: otpEnabled ? false : true,
-      otpCode,
-      otpExpire,
-      status: 'active',
-    });
+    newStudent = await retryDatabaseOperation(
+      () => Student.create({
+        ...creationData,
+        password: hashedPassword,
+        registrationType: 'manual',
+        emailVerified: otpEnabled ? false : true,
+        otpCode,
+        otpExpire,
+        status: 'active',
+      }),
+      'create student'
+    );
   } catch (error: any) {
     if (error?.code === 11000) {
       // Determine duplicate field from error or payload
@@ -150,11 +219,14 @@ export const loginStudent = async (credentials: TLoginCredentials | { auth_input
   const isEmail = /@/.test(identifier);
 
   // Find student by email or phone
-  const student = await Student.findOne({
-    ...(isEmail ? { email: identifier } : { phone: identifier }),
-    isDeleted: false,
-    status: 'active',
-  });
+  const student = await retryDatabaseOperation(
+    () => Student.findOne({
+      ...(isEmail ? { email: identifier } : { phone: identifier }),
+      isDeleted: false,
+      status: 'active',
+    }),
+    'findOne for login'
+  );
 
   if (!student) {
     throw new AppError(httpStatus.NOT_FOUND, "Student not found");

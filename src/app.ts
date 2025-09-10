@@ -64,6 +64,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://localhost:3002",
+  "http://localhost:3003",
+  "http://localhost:3004",
   "https://loop-nest.vercel.app",
   "https://loop-nest-student-dashboard.vercel.app",
   "https://loop-nest-admin-dashboard.vercel.app",
@@ -133,16 +135,76 @@ app.use("/public", express.static(path.join(process.cwd(), "public")));
 // CORS middleware
 app.use(cookieParser());
 
-// Ensure MongoDB connection on serverless (Vercel) before handling requests
+// Enhanced MongoDB connection with proper timeout and error handling
 const connectMongoOnce = async () => {
-  if (!config.database_url) return;
-  if (mongoose.connection.readyState === 1) return;
+  if (!config.database_url) {
+    console.log('[DATABASE] ❌ No DATABASE_URL provided');
+    throw new Error('Database URL is not configured');
+  }
+  
+  if (mongoose.connection.readyState === 1) {
+    console.log('[DATABASE] ✅ Already connected to MongoDB');
+    return;
+  }
+  
   if ((global as any).__mongooseConnPromise) {
+    console.log('[DATABASE] ⏳ Waiting for existing connection...');
     await (global as any).__mongooseConnPromise;
     return;
   }
-  (global as any).__mongooseConnPromise = mongoose.connect(config.database_url as string);
-  await (global as any).__mongooseConnPromise;
+
+  console.log('[DATABASE] 🔌 Connecting to MongoDB...');
+  console.log('[DATABASE] URL:', config.database_url.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+
+  // Enhanced connection options
+  const connectionOptions = {
+    // Connection timeout settings
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+    socketTimeoutMS: 45000, // 45 seconds
+    connectTimeoutMS: 30000, // 30 seconds
+    maxPoolSize: 10, // Maximum number of connections
+    minPoolSize: 2, // Minimum number of connections
+    maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+    
+    // Retry settings
+    retryWrites: true,
+    retryReads: true,
+    
+    // Buffer settings to prevent timeout errors
+    bufferMaxEntries: 0, // Disable mongoose buffering
+    bufferCommands: false, // Disable mongoose buffering
+    
+    // Additional options for better stability
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    
+    // Heartbeat settings
+    heartbeatFrequencyMS: 10000, // 10 seconds
+  };
+
+  try {
+    (global as any).__mongooseConnPromise = mongoose.connect(config.database_url as string, connectionOptions);
+    await (global as any).__mongooseConnPromise;
+    console.log('[DATABASE] ✅ Successfully connected to MongoDB');
+    
+    // Set up connection event listeners
+    mongoose.connection.on('error', (err) => {
+      console.log('[DATABASE] ❌ MongoDB connection error:', err.message);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.log('[DATABASE] ⚠️ MongoDB disconnected');
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+      console.log('[DATABASE] ✅ MongoDB reconnected');
+    });
+    
+  } catch (error: any) {
+    console.log('[DATABASE] ❌ Failed to connect to MongoDB:', error.message);
+    (global as any).__mongooseConnPromise = null; // Reset promise on error
+    throw error;
+  }
 };
 
 app.use(async (_req, _res, next) => {
@@ -157,13 +219,58 @@ app.use(async (_req, _res, next) => {
 // Application Routes
 app.use("/api/v1/", router);
 
+// Database health check endpoint
+app.get("/api/v1/health", async (req: Request, res: Response) => {
+  try {
+    const dbState = mongoose.connection.readyState;
+    const dbStates = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
+    
+    res.json({
+      success: true,
+      message: "LoopNest API is running",
+      database: {
+        status: dbStates[dbState as keyof typeof dbStates] || 'unknown',
+        readyState: dbState,
+        host: mongoose.connection.host || 'N/A',
+        port: mongoose.connection.port || 'N/A',
+        name: mongoose.connection.name || 'N/A'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Health check failed",
+      error: error.message,
+      database: {
+        status: 'error',
+        readyState: mongoose.connection.readyState
+      }
+    });
+  }
+});
+
 app.get("/api/v1/", (req: Request, res: Response) => {
-  res.send("Loop Nest API Live Now 1");
+  res.json({
+    success: true,
+    message: "LoopNest API is live",
+    version: "1.0.0",
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.get("/", (req: Request, res: Response) => {
-  const name = "Loop Nest server live now";
-  res.send(name);
+  res.json({
+    success: true,
+    message: "LoopNest server is running",
+    version: "1.0.0",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Global error handler (must be after all routes)
