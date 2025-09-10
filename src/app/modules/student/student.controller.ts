@@ -271,13 +271,20 @@ const refreshToken = catchAsync(async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
   } else if (isVercelHost) {
-    const vercelDomain = host.endsWith('.vercel.app') ? host : new URL(origin).hostname;
+    const vercelDomain = "vercel.app";
     
     res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
       domain: vercelDomain,
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
