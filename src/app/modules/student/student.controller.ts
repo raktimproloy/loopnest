@@ -7,141 +7,171 @@ import config from "../../config";
 // Utility function to create secure cookie options for authentication
 export const createAuthCookieOptions = (req: any) => {
   const isProd = config.node_env === 'production';
-  const host = req.hostname as string | undefined;
+  const host = req.hostname as string || '';
   const origin = req.get('origin') || '';
 
-  // Explicitly check for localhost and vercel.app domains
+  // Check if we're on localhost
   const isLocalhost = host === 'localhost' || 
                      host === '127.0.0.1' || 
-                     host?.includes('localhost') ||
-                     origin?.includes('localhost') ||
-                     origin?.includes('127.0.0.1');
+                     host.includes('localhost') ||
+                     origin.includes('localhost') ||
+                     origin.includes('127.0.0.1');
 
-  const isVercelHost = (host && /\.vercel\.app$/i.test(host)) || 
-                      /\.vercel\.app$/i.test(origin) ||
-                      /\.vercel\.app$/i.test(config.base_url || '');
+  // Check if we're on Vercel
+  const isVercelHost = host.endsWith('.vercel.app') || 
+                      origin.includes('.vercel.app');
 
-  // Set domain based on specific conditions
-  let domain: string | undefined;
-  if (isVercelHost) {
-    domain = '.vercel.app'; // Covers all vercel.app subdomains
-  } else if (isLocalhost) {
-    domain = undefined; // localhost requires no domain
-  } else {
-    // For other domains, try to extract the main domain
-    if (host && host.includes('.')) {
-      const parts = host.split('.');
-      if (parts.length >= 2) {
-        domain = `.${parts.slice(-2).join('.')}`;
-      }
+  let cookieOptions = {
+    httpOnly: true,
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  } as any;
+
+  if (isLocalhost) {
+    // For localhost, don't set domain, use lax sameSite, no secure
+    cookieOptions.secure = false;
+    cookieOptions.sameSite = 'lax';
+    // Don't set domain for localhost
+  } else if (isVercelHost || isProd) {
+    // For production/Vercel, use secure settings
+    cookieOptions.secure = true;
+    cookieOptions.sameSite = 'none';
+    
+    if (isVercelHost) {
+      // Extract the full vercel domain (e.g., your-app-name.vercel.app)
+      const vercelDomain = host.endsWith('.vercel.app') ? host : new URL(origin).hostname;
+      cookieOptions.domain = vercelDomain;
     }
   }
 
-  // Determine security settings
-  const needsSecure = isProd || isVercelHost;
-  const needsSameSiteNone = isVercelHost; // Required for cross-site cookies on vercel
-
-  const base = {
-    httpOnly: true,
-    secure: needsSecure,
-    sameSite: needsSameSiteNone ? 'none' : 'lax',
-    path: '/',
-  } as any;
-  
-  if (domain) base.domain = domain;
-  
-  return base;
+  return cookieOptions;
 };
 
-// Build cookie options that work for both localhost and *.vercel.app
-const getCookieOptions = (req: any) => {
-  return createAuthCookieOptions(req);
-};
-
-// Helper function to set authentication cookies for BOTH localhost AND vercel.app
+// Helper function to set authentication cookies properly
 const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: string) => {
-  const origin = req.get('origin') || '';
   const host = req.hostname || '';
-  const isVercelDeployment = host.includes('vercel.app') || origin.includes('vercel.app');
+  const origin = req.get('origin') || '';
   
-  if (isVercelDeployment) {
-    // When deployed on vercel.app, set cookies for both domains
-    // Set cookies for vercel.app domain (current domain)
-    res.cookie('accessToken', accessToken, {
+  // Check environment
+  const isLocalhost = host === 'localhost' || 
+                     host === '127.0.0.1' || 
+                     host.includes('localhost');
+                     
+  const isVercelHost = host.endsWith('.vercel.app') || 
+                      origin.includes('.vercel.app');
+
+  if (isLocalhost) {
+    // Running locally - set cookies for localhost only
+    const localCookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
+      secure: false,
+      sameSite: 'lax' as const,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...localCookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000
+      ...localCookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
-    // Also set cookies without domain for localhost compatibility
-    res.cookie('accessToken_localhost', accessToken, {
+  } else if (isVercelHost) {
+    // Running on Vercel - set cookies for the specific Vercel domain
+    const vercelDomain = host.endsWith('.vercel.app') ? host : new URL(origin).hostname;
+    
+    const vercelCookieOptions = {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      domain:"localhost",
+      secure: true,
+      sameSite: 'none' as const,
+      domain: vercelDomain,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...vercelCookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
-    res.cookie('refreshToken_localhost', refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      domain:"localhost",
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000
+    res.cookie('refreshToken', refreshToken, {
+      ...vercelCookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
+
   } else {
-    // When running on localhost, set cookies for both domains
-    // Set cookies for localhost (no domain)
-    res.cookie('accessToken', accessToken, {
+    // Other production environments
+    const prodCookieOptions = {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      domain:"localhost",
+      secure: true,
+      sameSite: 'lax' as const,
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...prodCookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
     
     res.cookie('refreshToken', refreshToken, {
+      ...prodCookieOptions,
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+  }
+};
+
+// Helper function to clear cookies properly
+const clearAuthCookies = (res: any, req: any) => {
+  const host = req.hostname || '';
+  const origin = req.get('origin') || '';
+  
+  const isLocalhost = host === 'localhost' || 
+                     host === '127.0.0.1' || 
+                     host.includes('localhost');
+                     
+  const isVercelHost = host.endsWith('.vercel.app') || 
+                      origin.includes('.vercel.app');
+
+  if (isLocalhost) {
+    // Clear localhost cookies
+    const localClearOptions = {
       httpOnly: true,
       secure: false,
-      sameSite: 'lax',
-      domain:"localhost",
+      sameSite: 'lax' as const,
       path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000
-    });
+    };
 
-    // Set cookies for vercel.app domain (for when frontend is on vercel)
-    res.cookie('accessToken_vercel', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    res.clearCookie('accessToken', localClearOptions);
+    res.clearCookie('refreshToken', localClearOptions);
+
+  } else if (isVercelHost) {
+    // Clear Vercel cookies
+    const vercelDomain = host.endsWith('.vercel.app') ? host : new URL(origin).hostname;
     
-    res.cookie('refreshToken_vercel', refreshToken, {
+    const vercelClearOptions = {
       httpOnly: true,
       secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
+      sameSite: 'none' as const,
+      domain: vercelDomain,
       path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000
-    });
+    };
+
+    res.clearCookie('accessToken', vercelClearOptions);
+    res.clearCookie('refreshToken', vercelClearOptions);
+
+  } else {
+    // Clear production cookies
+    const prodClearOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax' as const,
+      path: '/',
+    };
+
+    res.clearCookie('accessToken', prodClearOptions);
+    res.clearCookie('refreshToken', prodClearOptions);
   }
 };
 
@@ -215,50 +245,47 @@ const resendOTP = catchAsync(async (req, res) => {
 });
 
 const refreshToken = catchAsync(async (req, res) => {
-  // Check for refresh token in multiple cookie names
-  const refreshTokenCookie = (req as any).cookies?.refreshToken || 
-                           (req as any).cookies?.refreshToken_localhost || 
-                           (req as any).cookies?.refreshToken_vercel;
+  // Get refresh token from cookies or body
+  const refreshTokenCookie = (req as any).cookies?.refreshToken;
   const tokenToUse = req.body.refreshToken || refreshTokenCookie || '';
+  
   const result = await StudentServices.refreshAccessToken(tokenToUse);
 
-  const origin = req.get('origin') || '';
+  // Set new access token cookie with same strategy
   const host = req.hostname || '';
-  const isVercelDeployment = host.includes('vercel.app') || origin.includes('vercel.app');
+  const origin = req.get('origin') || '';
+  
+  const isLocalhost = host === 'localhost' || 
+                     host === '127.0.0.1' || 
+                     host.includes('localhost');
+                     
+  const isVercelHost = host.endsWith('.vercel.app') || 
+                      origin.includes('.vercel.app');
 
-  if (isVercelDeployment) {
-    // When deployed on vercel.app, set cookies for both domains
+  if (isLocalhost) {
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+  } else if (isVercelHost) {
+    const vercelDomain = host.endsWith('.vercel.app') ? host : new URL(origin).hostname;
+    
     res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
-
-    res.cookie('accessToken_localhost', result.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
+      domain: vercelDomain,
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
   } else {
-    // When running on localhost, set cookies for both domains
     res.cookie('accessToken', result.accessToken, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    });
-
-    res.cookie('accessToken_vercel', result.accessToken, {
-      httpOnly: true,
       secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
+      sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -269,7 +296,6 @@ const refreshToken = catchAsync(async (req, res) => {
     success: true,
     message: "Token refreshed successfully",
     data: { 
-      // New access token is stored in HTTP-only cookie for security
       message: "Access token refreshed and stored in secure cookie"
     },
   });
@@ -313,6 +339,45 @@ const updateProfile = catchAsync(async (req, res) => {
   });
 });
 
+const logout = catchAsync(async (req, res) => {
+  // Clear authentication cookies properly based on environment
+  clearAuthCookies(res, req);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Logged out successfully",
+    data: null,
+  });
+});
+
+const updateProfileImage = catchAsync(async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      success: false,
+      message: 'User not authenticated',
+      errorSources: [{ path: 'auth', message: 'User not authenticated' }]
+    });
+  }
+
+  const file = (req as any).file as any;
+  if (!file) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: 'Image file is required (field name: image)'
+    });
+  }
+
+  const result = await StudentServices.updateProfileImageFromDisk(req.user.userId, file.filename);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Profile image updated successfully",
+    data: result,
+  });
+});
+
 export const studentController = {
   manualRegister,
   login,
@@ -322,104 +387,6 @@ export const studentController = {
   refreshToken,
   getProfile,
   updateProfile,
-  logout: catchAsync(async (req, res) => {
-    // Clear ALL possible authentication cookies from BOTH localhost AND vercel.app
-    
-    // Clear main cookies (no domain)
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/'
-    });
-    
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/'
-    });
-
-    // Clear localhost-specific cookies
-    res.clearCookie('accessToken_localhost', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/'
-    });
-    
-    res.clearCookie('refreshToken_localhost', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      path: '/'
-    });
-
-    // Clear vercel.app domain cookies
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/'
-    });
-    
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/'
-    });
-
-    // Clear vercel-specific cookies
-    res.clearCookie('accessToken_vercel', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/'
-    });
-    
-    res.clearCookie('refreshToken_vercel', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      domain: '.vercel.app',
-      path: '/'
-    });
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Logged out successfully",
-      data: null,
-    });
-  }),
-  updateProfileImage: catchAsync(async (req, res) => {
-    if (!req.user?.userId) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        success: false,
-        message: 'User not authenticated',
-        errorSources: [{ path: 'auth', message: 'User not authenticated' }]
-      });
-    }
-
-    const file = (req as any).file as any;
-    if (!file) {
-      return res.status(httpStatus.BAD_REQUEST).json({
-        success: false,
-        message: 'Image file is required (field name: image)'
-      });
-    }
-
-    const result = await StudentServices.updateProfileImageFromDisk(req.user.userId, file.filename);
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Profile image updated successfully",
-      data: result,
-    });
-  }),
+  logout,
+  updateProfileImage,
 };
