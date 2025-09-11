@@ -18,6 +18,7 @@ const createPaymentValidationSchema = z.object({
 const updatePaymentStatusValidationSchema = z.object({
   body: z.object({
     status: z.enum(['accepted', 'rejected']),
+    reason: z.string().optional(),
   }),
   cookies: z.object({}).optional(),
 });

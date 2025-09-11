@@ -411,3 +411,414 @@ Support: support@theloopnest.com
 export const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
+// Payment notification email functions
+export const sendPaymentAcceptedEmail = async (email: string, studentName: string, courseName: string, coursePrice: number) => {
+  const maxRetries = 3;
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[EMAIL SERVICE] Attempt ${attempt}/${maxRetries} - Sending payment accepted email to: ${email}`);
+      
+      let transporter = createTransporter();
+      
+      // Verify SMTP connection
+      try {
+        await transporter.verify();
+        console.log(`[EMAIL SERVICE] ✅ SMTP connection verified successfully`);
+      } catch (verifyError: any) {
+        console.log(`[EMAIL SERVICE] Primary transporter failed, trying fallback...`);
+        transporter = createFallbackTransporter();
+        await transporter.verify();
+        console.log(`[EMAIL SERVICE] ✅ Fallback SMTP connection verified successfully`);
+      }
+      
+      const mailOptions = {
+        from: {
+          name: 'LoopNest',
+          address: config.smtp_user || 'no-reply@theloopnest.com'
+        },
+        to: email,
+        subject: '🎉 Payment Accepted - You Can Now Access Your Course!',
+        text: `
+Hello ${studentName},
+
+Great news! Your payment for "${courseName}" has been accepted and processed successfully.
+
+Course Details:
+- Course: ${courseName}
+- Amount: $${coursePrice}
+- Status: ✅ Accepted
+
+You can now access your course and start learning immediately!
+
+Log in to your account at https://theloopnest.com to begin your learning journey.
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The LoopNest Team
+
+---
+LoopNest - Your Learning Platform
+Website: https://theloopnest.com
+Support: support@theloopnest.com
+        `,
+        html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Accepted - LoopNest</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .greeting { color: #333333; font-size: 18px; margin-bottom: 20px; }
+        .message { color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+        .success-container { background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 30px; text-align: center; margin: 30px 0; }
+        .success-icon { font-size: 48px; color: #28a745; margin-bottom: 15px; }
+        .course-details { background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+        .course-detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+        .course-detail-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .course-detail-label { font-weight: 600; color: #495057; }
+        .course-detail-value { color: #007bff; font-weight: 500; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+        .cta-button:hover { background: linear-gradient(135deg, #0056b3 0%, #004085 100%); }
+        .footer { background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #dee2e6; }
+        .footer p { color: #666666; font-size: 14px; margin: 5px 0; }
+        .footer a { color: #007bff; text-decoration: none; }
+        .logo { font-size: 24px; font-weight: bold; color: #ffffff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">LoopNest</div>
+            <h1>🎉 Payment Accepted!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello ${studentName}!</div>
+            
+            <div class="message">
+                Great news! Your payment has been accepted and processed successfully. 
+                You can now access your course and start your learning journey immediately.
+            </div>
+            
+            <div class="success-container">
+                <div class="success-icon">✅</div>
+                <h2 style="color: #28a745; margin: 0;">Payment Confirmed</h2>
+                <p style="color: #155724; margin: 10px 0 0 0;">Your course is now available in your account</p>
+            </div>
+            
+            <div class="course-details">
+                <h3 style="color: #333; margin-top: 0; margin-bottom: 20px;">Course Details</h3>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Course Name:</span>
+                    <span class="course-detail-value">${courseName}</span>
+                </div>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Amount Paid:</span>
+                    <span class="course-detail-value">$${coursePrice}</span>
+                </div>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Status:</span>
+                    <span class="course-detail-value" style="color: #28a745;">✅ Accepted</span>
+                </div>
+            </div>
+            
+            <div class="message">
+                <strong>What's Next?</strong><br>
+                • Log in to your LoopNest account<br>
+                • Navigate to "My Courses" section<br>
+                • Start learning with your newly enrolled course<br>
+                • Access all course materials, videos, and resources
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="https://theloopnest.com/login" class="cta-button">Access My Course</a>
+            </div>
+            
+            <div class="message">
+                If you have any questions or need assistance, please don't hesitate to contact our support team.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>LoopNest - Your Learning Platform</strong></p>
+            <p>Website: <a href="https://theloopnest.com">https://theloopnest.com</a></p>
+            <p>Support: <a href="mailto:support@theloopnest.com">support@theloopnest.com</a></p>
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                This email was sent to ${email}. If you have any questions, please contact our support team.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+        `,
+        headers: {
+          'X-Mailer': 'LoopNest Email Service v1.0',
+          'X-Priority': '3',
+          'X-MSMail-Priority': 'Normal',
+          'Importance': 'Normal',
+          'X-Report-Abuse': 'Please report abuse to abuse@theloopnest.com',
+          'List-Unsubscribe': '<mailto:unsubscribe@theloopnest.com>',
+          'X-Entity-Ref-ID': `loopnest-payment-accepted-${Date.now()}`,
+          'X-LoopNest-Type': 'payment-accepted',
+          'X-LoopNest-Version': '1.0'
+        }
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      console.log(`[EMAIL SERVICE] ✅ Payment accepted email sent successfully on attempt ${attempt}!`);
+      console.log(`[EMAIL SERVICE] Message ID: ${result.messageId || 'N/A'}`);
+      
+      return { success: true, messageId: result.messageId || 'N/A' };
+    } catch (error: any) {
+      lastError = error;
+      console.log(`[EMAIL SERVICE] ❌ Attempt ${attempt}/${maxRetries} failed for payment accepted email to ${email}`);
+      console.log(`[EMAIL SERVICE] Error details:`, {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response
+      });
+      
+      if (attempt < maxRetries && (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'EAUTH')) {
+        console.log(`[EMAIL SERVICE] Retrying in 3 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
+      }
+      
+      break;
+    }
+  }
+  
+  console.log(`[EMAIL SERVICE] ❌ All ${maxRetries} attempts failed for payment accepted email to ${email}`);
+  
+  return { 
+    success: false, 
+    error: lastError?.message || 'Failed to send payment accepted email after all retries',
+    details: {
+      code: lastError?.code,
+      command: lastError?.command,
+      response: lastError?.response
+    }
+  };
+};
+
+export const sendPaymentRejectedEmail = async (email: string, studentName: string, courseName: string, coursePrice: number, reason?: string) => {
+  const maxRetries = 3;
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[EMAIL SERVICE] Attempt ${attempt}/${maxRetries} - Sending payment rejected email to: ${email}`);
+      
+      let transporter = createTransporter();
+      
+      // Verify SMTP connection
+      try {
+        await transporter.verify();
+        console.log(`[EMAIL SERVICE] ✅ SMTP connection verified successfully`);
+      } catch (verifyError: any) {
+        console.log(`[EMAIL SERVICE] Primary transporter failed, trying fallback...`);
+        transporter = createFallbackTransporter();
+        await transporter.verify();
+        console.log(`[EMAIL SERVICE] ✅ Fallback SMTP connection verified successfully`);
+      }
+      
+      const mailOptions = {
+        from: {
+          name: 'LoopNest',
+          address: config.smtp_user || 'no-reply@theloopnest.com'
+        },
+        to: email,
+        subject: 'Payment Rejected - Please Review Your Payment Details',
+        text: `
+Hello ${studentName},
+
+We regret to inform you that your payment for "${courseName}" has been rejected.
+
+Course Details:
+- Course: ${courseName}
+- Amount: $${coursePrice}
+- Status: ❌ Rejected
+${reason ? `- Reason: ${reason}` : ''}
+
+Please review your payment details and try again. If you believe this is an error, please contact our support team immediately.
+
+You can submit a new payment request through your account dashboard.
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The LoopNest Team
+
+---
+LoopNest - Your Learning Platform
+Website: https://theloopnest.com
+Support: support@theloopnest.com
+        `,
+        html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Rejected - LoopNest</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        .header { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .greeting { color: #333333; font-size: 18px; margin-bottom: 20px; }
+        .message { color: #666666; font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+        .rejection-container { background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 30px; text-align: center; margin: 30px 0; }
+        .rejection-icon { font-size: 48px; color: #dc3545; margin-bottom: 15px; }
+        .course-details { background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+        .course-detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+        .course-detail-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .course-detail-label { font-weight: 600; color: #495057; }
+        .course-detail-value { color: #dc3545; font-weight: 500; }
+        .reason-box { background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0; color: #856404; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+        .cta-button:hover { background: linear-gradient(135deg, #0056b3 0%, #004085 100%); }
+        .footer { background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #dee2e6; }
+        .footer p { color: #666666; font-size: 14px; margin: 5px 0; }
+        .footer a { color: #007bff; text-decoration: none; }
+        .logo { font-size: 24px; font-weight: bold; color: #ffffff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">LoopNest</div>
+            <h1>Payment Rejected</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hello ${studentName},</div>
+            
+            <div class="message">
+                We regret to inform you that your payment has been rejected. 
+                Please review the details below and take the necessary action.
+            </div>
+            
+            <div class="rejection-container">
+                <div class="rejection-icon">❌</div>
+                <h2 style="color: #dc3545; margin: 0;">Payment Rejected</h2>
+                <p style="color: #721c24; margin: 10px 0 0 0;">Please review your payment details</p>
+            </div>
+            
+            <div class="course-details">
+                <h3 style="color: #333; margin-top: 0; margin-bottom: 20px;">Course Details</h3>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Course Name:</span>
+                    <span class="course-detail-value">${courseName}</span>
+                </div>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Amount:</span>
+                    <span class="course-detail-value">$${coursePrice}</span>
+                </div>
+                <div class="course-detail-row">
+                    <span class="course-detail-label">Status:</span>
+                    <span class="course-detail-value" style="color: #dc3545;">❌ Rejected</span>
+                </div>
+            </div>
+            
+            ${reason ? `
+            <div class="reason-box">
+                <strong>Reason for Rejection:</strong><br>
+                ${reason}
+            </div>
+            ` : ''}
+            
+            <div class="message">
+                <strong>What You Can Do:</strong><br>
+                • Review your payment details and try again<br>
+                • Contact our support team if you believe this is an error<br>
+                • Submit a new payment request through your account<br>
+                • Check your bank account for any issues
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="https://theloopnest.com/payments" class="cta-button">Submit New Payment</a>
+            </div>
+            
+            <div class="message">
+                If you have any questions or need assistance, please don't hesitate to contact our support team. 
+                We're here to help you resolve any payment issues.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>LoopNest - Your Learning Platform</strong></p>
+            <p>Website: <a href="https://theloopnest.com">https://theloopnest.com</a></p>
+            <p>Support: <a href="mailto:support@theloopnest.com">support@theloopnest.com</a></p>
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                This email was sent to ${email}. If you have any questions, please contact our support team.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+        `,
+        headers: {
+          'X-Mailer': 'LoopNest Email Service v1.0',
+          'X-Priority': '3',
+          'X-MSMail-Priority': 'Normal',
+          'Importance': 'Normal',
+          'X-Report-Abuse': 'Please report abuse to abuse@theloopnest.com',
+          'List-Unsubscribe': '<mailto:unsubscribe@theloopnest.com>',
+          'X-Entity-Ref-ID': `loopnest-payment-rejected-${Date.now()}`,
+          'X-LoopNest-Type': 'payment-rejected',
+          'X-LoopNest-Version': '1.0'
+        }
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      
+      console.log(`[EMAIL SERVICE] ✅ Payment rejected email sent successfully on attempt ${attempt}!`);
+      console.log(`[EMAIL SERVICE] Message ID: ${result.messageId || 'N/A'}`);
+      
+      return { success: true, messageId: result.messageId || 'N/A' };
+    } catch (error: any) {
+      lastError = error;
+      console.log(`[EMAIL SERVICE] ❌ Attempt ${attempt}/${maxRetries} failed for payment rejected email to ${email}`);
+      console.log(`[EMAIL SERVICE] Error details:`, {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response
+      });
+      
+      if (attempt < maxRetries && (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'EAUTH')) {
+        console.log(`[EMAIL SERVICE] Retrying in 3 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        continue;
+      }
+      
+      break;
+    }
+  }
+  
+  console.log(`[EMAIL SERVICE] ❌ All ${maxRetries} attempts failed for payment rejected email to ${email}`);
+  
+  return { 
+    success: false, 
+    error: lastError?.message || 'Failed to send payment rejected email after all retries',
+    details: {
+      code: lastError?.code,
+      command: lastError?.command,
+      response: lastError?.response
+    }
+  };
+};

@@ -53,7 +53,8 @@ export const listPaymentsAdmin = catchAsync(async (req, res) => {
 
 export const updatePaymentStatus = catchAsync(async (req, res) => {
   const adminId = req.admin?.userId as string;
-  const result = await PaymentServices.updatePaymentStatus(adminId, req.params.id, req.body.status);
+  const { status, reason } = req.body;
+  const result = await PaymentServices.updatePaymentStatus(adminId, req.params.id, status, reason);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
