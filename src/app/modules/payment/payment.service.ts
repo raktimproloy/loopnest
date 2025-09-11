@@ -6,6 +6,28 @@ import { Student as User } from '../student/student.model';
 import { sendPaymentAcceptedEmail, sendPaymentRejectedEmail } from '../../../utils/emailService';
 
 export const createPaymentRequest = async (userId: string, payload: Omit<TPayment, 'userId' | 'status' | 'accept_admin_id' | 'createdAt' | 'updatedAt'>) => {
+  // Check if student already has this course in activeCourses
+  const student = await User.findById(userId).select('activeCourses');
+  if (!student) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Student not found');
+  }
+
+  // Check if course is already in student's activeCourses
+  if (student.activeCourses.includes(payload.courseId as any)) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'You already have access to this course');
+  }
+
+  // Check if there's already a pending payment request for this course
+  const existingPendingPayment = await Payment.findOne({
+    userId,
+    courseId: payload.courseId,
+    status: 'pending'
+  });
+
+  if (existingPendingPayment) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'You already have a pending payment request for this course');
+  }
+
   const doc = await Payment.create({
     ...payload,
     userId,
