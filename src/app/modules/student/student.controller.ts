@@ -299,6 +299,65 @@ const updateProfileImage = catchAsync(async (req, res) => {
   });
 });
 
+const getMyCourses = catchAsync(async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(httpStatus.UNAUTHORIZED).json({
+      success: false,
+      message: 'User not authenticated',
+      errorSources: [{ path: 'auth', message: 'User not authenticated' }]
+    });
+  }
+
+  const result = await StudentServices.getStudentActiveCourses(req.user.userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Active courses fetched successfully",
+    data: result,
+  });
+});
+
+const assignCourse = catchAsync(async (req, res) => {
+  const { studentId, courseId } = req.body;
+
+  if (!studentId || !courseId) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: 'Student ID and Course ID are required'
+    });
+  }
+
+  const result = await StudentServices.assignCourseToStudent(studentId, courseId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
+const removeCourse = catchAsync(async (req, res) => {
+  const { studentId, courseId } = req.body;
+
+  if (!studentId || !courseId) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      success: false,
+      message: 'Student ID and Course ID are required'
+    });
+  }
+
+  const result = await StudentServices.removeCourseFromStudent(studentId, courseId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 export const studentController = {
   manualRegister,
   login,
@@ -310,4 +369,7 @@ export const studentController = {
   updateProfile,
   logout,
   updateProfileImage,
+  getMyCourses,
+  assignCourse,
+  removeCourse,
 };

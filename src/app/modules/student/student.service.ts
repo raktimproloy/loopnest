@@ -630,6 +630,75 @@ export const updateProfileImageFromDisk = async (userId: string, filename: strin
   return { profileImage: publicUrl, student: updated };
 };
 
+export const getStudentActiveCourses = async (userId: string) => {
+  const student = await Student.findById(userId)
+    .populate({
+      path: 'activeCourses',
+      match: { isDeleted: false, isPublished: true },
+      select: '-__v'
+    })
+    .select('activeCourses fullName email')
+    .lean();
+
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  // Filter out null courses (in case some courses were deleted)
+  const activeCourses = (student.activeCourses || []).filter(course => course !== null);
+
+  return {
+    student: {
+      fullName: student.fullName,
+      email: student.email,
+    },
+    courses: activeCourses,
+    totalCourses: activeCourses.length
+  };
+};
+
+export const assignCourseToStudent = async (studentId: string, courseId: string) => {
+  // Check if student exists
+  const student = await Student.findById(studentId);
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  // Check if course exists and is published
+  const { Course } = await import('../course/course.model');
+  const course = await Course.findById(courseId);
+  if (!course || course.isDeleted || !course.isPublished) {
+    throw new AppError(httpStatus.NOT_FOUND, "Course not found or not available");
+  }
+
+  // Check if student already has this course
+  if ((student.activeCourses || []).includes(courseId as any)) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Student already has this course");
+  }
+
+  // Add course to student's active courses
+  await Student.findByIdAndUpdate(studentId, {
+    $addToSet: { activeCourses: courseId }
+  });
+
+  return { message: "Course assigned successfully" };
+};
+
+export const removeCourseFromStudent = async (studentId: string, courseId: string) => {
+  // Check if student exists
+  const student = await Student.findById(studentId);
+  if (!student || student.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  // Remove course from student's active courses
+  await Student.findByIdAndUpdate(studentId, {
+    $pull: { activeCourses: courseId }
+  });
+
+  return { message: "Course removed successfully" };
+};
+
 export const StudentServices = {
   manualRegisterStudent,
   loginStudent,
@@ -645,6 +714,9 @@ export const StudentServices = {
   deleteStudentByAdmin,
   updateProfileImage,
   updateProfileImageFromDisk,
+  getStudentActiveCourses,
+  assignCourseToStudent,
+  removeCourseFromStudent,
 };
 
 // no dynamic assignment; function is included in StudentServices above

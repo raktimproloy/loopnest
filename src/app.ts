@@ -170,22 +170,22 @@ const connectMongoOnce = async () => {
     retryWrites: true,
     retryReads: true,
     
-    // Buffer settings to prevent timeout errors
-    bufferMaxEntries: 0, // Disable mongoose buffering
-    bufferCommands: false, // Disable mongoose buffering
-    
-    // Additional options for better stability
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    
     // Heartbeat settings
     heartbeatFrequencyMS: 10000, // 10 seconds
+    
+    // Modern MongoDB driver options
+    directConnection: false, // Use connection pooling
+    compressors: ['zlib' as const], // Enable compression
   };
 
   try {
     (global as any).__mongooseConnPromise = mongoose.connect(config.database_url as string, connectionOptions);
     await (global as any).__mongooseConnPromise;
     console.log('[DATABASE] ✅ Successfully connected to MongoDB');
+    
+    // Set mongoose options to prevent buffering issues
+    mongoose.set('bufferCommands', false);
+    // Note: bufferMaxEntries is deprecated in newer versions
     
     // Set up connection event listeners
     mongoose.connection.on('error', (err) => {

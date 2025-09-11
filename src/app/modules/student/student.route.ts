@@ -2,6 +2,7 @@ import express from "express";
 import { studentController } from "./student.controller";
 import validateRequest from "../../middleware/validateRequest";
 import auth from "../../middleware/auth";
+import { adminAuth } from "../../middleware/adminAuth";
 import { StudentValidation } from "./student.validation";
 import multer from "multer";
 import path from "path";
@@ -92,6 +93,25 @@ router.put(
   auth(),
   upload.single("image"),
   studentController.updateProfileImage
+);
+
+router.get(
+  "/my-courses",
+  auth(),
+  studentController.getMyCourses
+);
+
+// Admin routes for course assignment
+router.post(
+  "/assign-course",
+  adminAuth(),
+  studentController.assignCourse
+);
+
+router.post(
+  "/remove-course",
+  adminAuth(),
+  studentController.removeCourse
 );
 
 router.post(
