@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import config from '../app/config';
+import { SMSService } from './smsService';
 
 const createTransporter = () => {
   const port = Number(config.smtp_port) || 587;
@@ -410,6 +411,69 @@ Support: support@theloopnest.com
 
 export const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Unified notification service that handles both email and SMS
+export const sendOTPNotification = async (authInput: string, otpCode: string, fullName: string) => {
+  const isEmail = /@/.test(authInput);
+  const results = {
+    email: null as any,
+    sms: null as any
+  };
+
+  if (isEmail) {
+    // Send email OTP
+    console.log(`[NOTIFICATION SERVICE] Sending OTP via email to: ${authInput}`);
+    results.email = await sendOTPEmail(authInput, otpCode, fullName);
+  } else {
+    // Send SMS OTP
+    console.log(`[NOTIFICATION SERVICE] Sending OTP via SMS to: ${authInput}`);
+    results.sms = await SMSService.sendOTPSMS(authInput, otpCode, fullName);
+  }
+
+  return results;
+};
+
+export const sendPaymentAcceptedNotification = async (email: string, phone: string, studentName: string, courseName: string, coursePrice: number) => {
+  const results = {
+    email: null as any,
+    sms: null as any
+  };
+
+  // Send email notification if email is available
+  if (email) {
+    console.log(`[NOTIFICATION SERVICE] Sending payment accepted email to: ${email}`);
+    results.email = await sendPaymentAcceptedEmail(email, studentName, courseName, coursePrice);
+  }
+
+  // Send SMS notification if phone is available
+  if (phone) {
+    console.log(`[NOTIFICATION SERVICE] Sending payment accepted SMS to: ${phone}`);
+    results.sms = await SMSService.sendPaymentAcceptedSMS(phone, studentName, courseName, coursePrice);
+  }
+
+  return results;
+};
+
+export const sendPaymentRejectedNotification = async (email: string, phone: string, studentName: string, courseName: string, coursePrice: number, reason?: string) => {
+  const results = {
+    email: null as any,
+    sms: null as any
+  };
+
+  // Send email notification if email is available
+  if (email) {
+    console.log(`[NOTIFICATION SERVICE] Sending payment rejected email to: ${email}`);
+    results.email = await sendPaymentRejectedEmail(email, studentName, courseName, coursePrice, reason);
+  }
+
+  // Send SMS notification if phone is available
+  if (phone) {
+    console.log(`[NOTIFICATION SERVICE] Sending payment rejected SMS to: ${phone}`);
+    results.sms = await SMSService.sendPaymentRejectedSMS(phone, studentName, courseName, coursePrice, reason);
+  }
+
+  return results;
 };
 
 // Payment notification email functions

@@ -3,7 +3,7 @@ import AppError from '../../errors/AppError';
 import { Payment } from './payment.model';
 import { TPayment } from './payment.interface';
 import { Student as User } from '../student/student.model';
-import { sendPaymentAcceptedEmail, sendPaymentRejectedEmail } from '../../../utils/emailService';
+import { sendPaymentAcceptedEmail, sendPaymentRejectedEmail, sendPaymentAcceptedNotification, sendPaymentRejectedNotification } from '../../../utils/emailService';
 
 export const createPaymentRequest = async (userId: string, payload: Omit<TPayment, 'userId' | 'status' | 'accept_admin_id' | 'createdAt' | 'updatedAt'>) => {
   // Check if student already has this course in activeCourses
@@ -13,7 +13,7 @@ export const createPaymentRequest = async (userId: string, payload: Omit<TPaymen
   }
 
   // Check if course is already in student's activeCourses
-  if (student.activeCourses.includes(payload.courseId as any)) {
+  if (student.activeCourses && student.activeCourses.includes(payload.courseId as any)) {
     throw new AppError(httpStatus.BAD_REQUEST, 'You already have access to this course');
   }
 
@@ -108,52 +108,75 @@ export const updatePaymentStatus = async (adminId: string, id: string, status: '
     await User.updateOne({ _id: payment.userId }, { $addToSet: { activeCourses: payment.courseId } });
   }
 
-  // Send email notification to student
+  // Send notification (email and SMS) to student
   try {
     const student = payment.userId as any;
     const course = payment.courseId as any;
+    const studentEmail = student?.email;
+    const studentPhone = student?.phone;
     
-    if (student?.email) {
-      console.log(`[PAYMENT SERVICE] Sending ${status} email notification to student: ${student.email}`);
+    if (studentEmail || studentPhone) {
+      console.log(`[PAYMENT SERVICE] Sending ${status} notification to student:`, {
+        email: studentEmail || 'Not provided',
+        phone: studentPhone || 'Not provided'
+      });
       
       if (status === 'accepted') {
-        const emailResult = await sendPaymentAcceptedEmail(
-          student.email,
+        const notificationResult = await sendPaymentAcceptedNotification(
+          studentEmail,
+          studentPhone,
           student.fullName || 'Student',
           course?.title || 'Course',
           course?.price || payment.price
         );
         
-        if (emailResult.success) {
-          console.log(`[PAYMENT SERVICE] ✅ Payment accepted email sent successfully to ${student.email}`);
-          console.log(`[PAYMENT SERVICE] Message ID: ${emailResult.messageId}`);
-        } else {
-          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment accepted email to ${student.email}`);
-          console.log(`[PAYMENT SERVICE] Email error:`, emailResult.error);
+        if (notificationResult.email?.success) {
+          console.log(`[PAYMENT SERVICE] ✅ Payment accepted email sent successfully to ${studentEmail}`);
+          console.log(`[PAYMENT SERVICE] Email Message ID: ${notificationResult.email.messageId}`);
+        } else if (notificationResult.email?.error) {
+          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment accepted email to ${studentEmail}`);
+          console.log(`[PAYMENT SERVICE] Email error:`, notificationResult.email.error);
+        }
+        
+        if (notificationResult.sms?.success) {
+          console.log(`[PAYMENT SERVICE] ✅ Payment accepted SMS sent successfully to ${studentPhone}`);
+          console.log(`[PAYMENT SERVICE] SMS Message ID: ${notificationResult.sms.messageId}`);
+        } else if (notificationResult.sms?.error) {
+          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment accepted SMS to ${studentPhone}`);
+          console.log(`[PAYMENT SERVICE] SMS error:`, notificationResult.sms.error);
         }
       } else if (status === 'rejected') {
-        const emailResult = await sendPaymentRejectedEmail(
-          student.email,
+        const notificationResult = await sendPaymentRejectedNotification(
+          studentEmail,
+          studentPhone,
           student.fullName || 'Student',
           course?.title || 'Course',
           course?.price || payment.price,
           reason
         );
         
-        if (emailResult.success) {
-          console.log(`[PAYMENT SERVICE] ✅ Payment rejected email sent successfully to ${student.email}`);
-          console.log(`[PAYMENT SERVICE] Message ID: ${emailResult.messageId}`);
-        } else {
-          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment rejected email to ${student.email}`);
-          console.log(`[PAYMENT SERVICE] Email error:`, emailResult.error);
+        if (notificationResult.email?.success) {
+          console.log(`[PAYMENT SERVICE] ✅ Payment rejected email sent successfully to ${studentEmail}`);
+          console.log(`[PAYMENT SERVICE] Email Message ID: ${notificationResult.email.messageId}`);
+        } else if (notificationResult.email?.error) {
+          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment rejected email to ${studentEmail}`);
+          console.log(`[PAYMENT SERVICE] Email error:`, notificationResult.email.error);
+        }
+        
+        if (notificationResult.sms?.success) {
+          console.log(`[PAYMENT SERVICE] ✅ Payment rejected SMS sent successfully to ${studentPhone}`);
+          console.log(`[PAYMENT SERVICE] SMS Message ID: ${notificationResult.sms.messageId}`);
+        } else if (notificationResult.sms?.error) {
+          console.log(`[PAYMENT SERVICE] ❌ Failed to send payment rejected SMS to ${studentPhone}`);
+          console.log(`[PAYMENT SERVICE] SMS error:`, notificationResult.sms.error);
         }
       }
     } else {
-      console.log(`[PAYMENT SERVICE] ⚠️ No email found for student, skipping email notification`);
+      console.log(`[PAYMENT SERVICE] ⚠️ No email or phone found for student, skipping notifications`);
     }
-  } catch (emailError: any) {
-    console.log(`[PAYMENT SERVICE] ❌ Error sending payment notification email:`, emailError.message);
-    // Don't throw error - payment status update should succeed even if email fails
+  } catch (notificationError: any) {
+    console.log(`[PAYMENT SERVICE] ❌ Error sending payment notifications:`, notificationError.message);
+    // Don't throw error - payment status update should succeed even if notifications fail
   }
 
   return payment;

@@ -59,7 +59,6 @@ courseSchema.pre(['updateOne', 'findOneAndUpdate'], function(next) {
 });
 
 // Index for better query performance
-courseSchema.index({ slug: 1 });
 courseSchema.index({ courseType: 1 });
 courseSchema.index({ isPublished: 1 });
 courseSchema.index({ isDeleted: 1 });

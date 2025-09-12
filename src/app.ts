@@ -69,6 +69,12 @@ const allowedOrigins = [
   "https://loop-nest.vercel.app",
   "https://loop-nest-student-dashboard.vercel.app",
   "https://loop-nest-admin-dashboard.vercel.app",
+
+  "https://theloopnest.com",
+  "https://student.theloopnest.com",
+  "https://paneladmin.theloopnest.com",
+
+
 ]
 // মেক শিওর করিয়েন যে লিংক এর পরে কোন / বা কিচ্ছু নাই, জাস্ট প্লেইন URL
 

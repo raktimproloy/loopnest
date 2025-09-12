@@ -4,7 +4,7 @@ import { TJWTPayload, TLoginCredentials, TSocialLoginData, TStudent } from './st
 import { Student } from './student.model';
 import httpStatus from 'http-status';
 import { createAccessToken, createRefreshToken } from '../../../utils/jwt';
-import { generateOTP, sendOTPEmail } from '../../../utils/emailService';
+import { generateOTP, sendOTPEmail, sendOTPNotification } from '../../../utils/emailService';
 import fs from 'fs';
 import path from 'path';
 import config from '../../config';
@@ -134,8 +134,8 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   // Hash password
   const hashedPassword = await bcrypt.hash(payload.password!, 12);
 
-  // Generate OTP if email provided (email-based verification)
-  const otpEnabled = !!creationData.email;
+  // Generate OTP if email or phone provided (email or SMS verification)
+  const otpEnabled = !!(creationData.email || creationData.phone);
   const otpCode = otpEnabled ? generateOTP() : undefined;
   const otpExpire = otpEnabled
     ? new Date(Date.now() + 10 * 60 * 1000)
@@ -182,33 +182,40 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
     throw error;
   }
 
-  // Send OTP email only if email present
+  // Send OTP notification (email or SMS) if auth input present
   if (otpEnabled) {
-    console.log(`[STUDENT REGISTER] Sending OTP email to: ${creationData.email}`);
-    const emailResult = await sendOTPEmail(creationData.email!, otpCode!, payload.fullName!);
+    const authInput = creationData.email || creationData.phone;
+    console.log(`[STUDENT REGISTER] Sending OTP notification to: ${authInput}`);
+    console.log(`[STUDENT REGISTER] OTP Code: ${otpCode}`);
+    console.log(`[STUDENT REGISTER] Full Name: ${payload.fullName}`);
     
-    if (emailResult.success) {
-      console.log(`[STUDENT REGISTER] ✅ OTP email sent successfully to ${creationData.email}`);
-      console.log(`[STUDENT REGISTER] Message ID: ${emailResult.messageId}`);
+    const notificationResult = await sendOTPNotification(authInput!, otpCode!, payload.fullName!);
+    
+    if (notificationResult.email?.success) {
+      console.log(`[STUDENT REGISTER] ✅ OTP email sent successfully to ${authInput}`);
+      console.log(`[STUDENT REGISTER] Email Message ID: ${notificationResult.email.messageId}`);
+    } else if (notificationResult.sms?.success) {
+      console.log(`[STUDENT REGISTER] ✅ OTP SMS sent successfully to ${authInput}`);
+      console.log(`[STUDENT REGISTER] SMS Message ID: ${notificationResult.sms.messageId}`);
     } else {
-      console.log(`[STUDENT REGISTER] ❌ Failed to send OTP email to ${creationData.email}`);
-      console.log(`[STUDENT REGISTER] Email error:`, emailResult.error);
-      console.log(`[STUDENT REGISTER] Email details:`, emailResult.details);
-      // Email sending failed, but continue with OTP generation
+      console.log(`[STUDENT REGISTER] ❌ Failed to send OTP notification to ${authInput}`);
+      if (notificationResult.email?.error) {
+        console.log(`[STUDENT REGISTER] Email error:`, notificationResult.email.error);
+      }
+      if (notificationResult.sms?.error) {
+        console.log(`[STUDENT REGISTER] SMS error:`, notificationResult.sms.error);
+      }
+      // Notification sending failed, but continue with OTP generation
     }
   } else {
-    console.log(`[STUDENT REGISTER] No email provided, skipping OTP email sending`);
+    console.log(`[STUDENT REGISTER] No email or phone provided, skipping OTP notification`);
   }
 
   // Remove sensitive data
   const { password, otpCode: _otp, otpExpire: _otpExpire, ...studentWithoutSensitiveData } = newStudent.toObject();
 
-  // For now, include OTP in response when email verification is enabled
-  const responseData = otpEnabled
-    ? { ...studentWithoutSensitiveData, otpCode }
-    : studentWithoutSensitiveData;
-
-  return responseData;
+  // Return student data without OTP information
+  return studentWithoutSensitiveData;
 };
 
 export const loginStudent = async (credentials: TLoginCredentials | { auth_input: string; password: string }) => {
@@ -372,18 +379,25 @@ export const resendOTP = async (email: string) => {
     otpExpire,
   });
 
-  // Send OTP email
-  console.log(`[STUDENT RESEND OTP] Sending OTP email to: ${email}`);
-  const emailResult = await sendOTPEmail(email, otpCode, student.fullName);
+  // Send OTP notification (email or SMS)
+  console.log(`[STUDENT RESEND OTP] Sending OTP notification to: ${email}`);
+  const notificationResult = await sendOTPNotification(email, otpCode, student.fullName);
   
-  if (emailResult.success) {
+  if (notificationResult.email?.success) {
     console.log(`[STUDENT RESEND OTP] ✅ OTP email sent successfully to ${email}`);
-    console.log(`[STUDENT RESEND OTP] Message ID: ${emailResult.messageId}`);
+    console.log(`[STUDENT RESEND OTP] Email Message ID: ${notificationResult.email.messageId}`);
+  } else if (notificationResult.sms?.success) {
+    console.log(`[STUDENT RESEND OTP] ✅ OTP SMS sent successfully to ${email}`);
+    console.log(`[STUDENT RESEND OTP] SMS Message ID: ${notificationResult.sms.messageId}`);
   } else {
-    console.log(`[STUDENT RESEND OTP] ❌ Failed to send OTP email to ${email}`);
-    console.log(`[STUDENT RESEND OTP] Email error:`, emailResult.error);
-    console.log(`[STUDENT RESEND OTP] Email details:`, emailResult.details);
-    // Email sending failed, but continue with OTP generation
+    console.log(`[STUDENT RESEND OTP] ❌ Failed to send OTP notification to ${email}`);
+    if (notificationResult.email?.error) {
+      console.log(`[STUDENT RESEND OTP] Email error:`, notificationResult.email.error);
+    }
+    if (notificationResult.sms?.error) {
+      console.log(`[STUDENT RESEND OTP] SMS error:`, notificationResult.sms.error);
+    }
+    // Notification sending failed, but continue with OTP generation
   }
 
   return { message: "OTP sent successfully" };

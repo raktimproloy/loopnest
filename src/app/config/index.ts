@@ -14,4 +14,8 @@ export default {
   smtp_port: process.env.SMTP_PORT,
   smtp_user: process.env.SMTP_USER,
   smtp_pass: process.env.SMTP_PASS,
+  // SMS Configuration
+  sms_api_key: process.env.SMS_API_KEY,
+  sms_sender_id: process.env.SMS_SENDER_ID,
+  sms_api_url: process.env.SMS_API_URL || 'http://bulksmsbd.net/api/smsapi',
 };

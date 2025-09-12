@@ -103,7 +103,6 @@ const blogSchema = new Schema<TBlog>({
 
 // Indexes for better performance
 blogSchema.index({ title: 'text', content: 'text', excerpt: 'text' });
-blogSchema.index({ slug: 1 });
 blogSchema.index({ status: 1, isDeleted: 1 });
 blogSchema.index({ category: 1 });
 blogSchema.index({ tags: 1 });
