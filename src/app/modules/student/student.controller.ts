@@ -12,7 +12,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".vercel.app",
+    domain: ".theloopnest.com",
     maxAge: 86400000,
     path: "/",
   })
@@ -21,7 +21,7 @@ const setAuthCookies = (res: any, req: any, accessToken: string, refreshToken: s
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".vercel.app",
+    domain: ".theloopnest.com",
     maxAge: 86400000,
     path: "/",
   })
@@ -69,7 +69,7 @@ const clearAuthCookies = (res: any, req: any) => {
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".vercel.app",
+    domain: ".theloopnest.com",
     maxAge: 86400000,
     path: "/",
   })
@@ -78,7 +78,7 @@ const clearAuthCookies = (res: any, req: any) => {
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".vercel.app",
+    domain: ".theloopnest.com",
     maxAge: 86400000,
     path: "/",
   })
@@ -207,7 +207,7 @@ const refreshToken = catchAsync(async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: 'none',
-    domain: '.vercel.app',
+    domain: '.theloopnest.com',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
