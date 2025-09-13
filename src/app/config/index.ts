@@ -1,13 +1,14 @@
 import dotenv from "dotenv";
 import path from "path";
 
-// Load environment variables for both local development and Vercel deployment
+// Load environment variables for both local development and production
 if (process.env.NODE_ENV !== 'production') {
-  // Only load .env file in development
+  // Load .env file in development
   dotenv.config({ path: path.join(process.cwd(), ".env") });
+  console.log('[CONFIG] Using development environment variables from .env file');
 } else {
-  // In production (Vercel), environment variables are already available
-  console.log('[CONFIG] Using production environment variables from Vercel');
+  // In production, environment variables should be set by hosting environment
+  console.log('[CONFIG] Using production environment variables from hosting environment');
 }
 
 // Environment variable validation and logging
@@ -32,17 +33,14 @@ const validateEnvironmentVariables = () => {
       console.error(`[CONFIG]   - ${varName}`);
     });
     
-    if (process.env.NODE_ENV === 'production') {
-      console.error('[CONFIG] Please set these variables in your Vercel project dashboard');
-      console.error('[CONFIG] Go to: Project Settings > Environment Variables');
-    } else {
+    if (process.env.NODE_ENV === 'development') {
       console.error('[CONFIG] Please add these variables to your .env file');
+    } else {
+      console.error('[CONFIG] Please set these variables in your hosting environment');
     }
     
-    // Don't throw error in development, just warn
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-    }
+    // Don't throw error, just warn - let the app continue with limited functionality
+    console.warn('[CONFIG] ⚠️ Continuing with missing environment variables - some features may not work');
   } else {
     console.log('[CONFIG] ✅ All required environment variables are set');
   }

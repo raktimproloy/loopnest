@@ -458,7 +458,7 @@ const checkEmailConfig = catchAsync(async (req, res) => {
         environment: envCheck,
         smtpValid: isValid,
         timestamp: new Date().toISOString(),
-        deployment: process.env.VERCEL ? 'Vercel' : 'Local'
+        deployment: process.env.NODE_ENV === 'production' ? 'Production' : 'Local'
       },
     });
   } catch (error: any) {
@@ -555,7 +555,7 @@ const checkSMSConfig = catchAsync(async (req, res) => {
         environment: envCheck,
         smsValid: isValid,
         timestamp: new Date().toISOString(),
-        deployment: process.env.VERCEL ? 'Vercel' : 'Local'
+        deployment: process.env.NODE_ENV === 'production' ? 'Production' : 'Local'
       },
     });
   } catch (error: any) {
