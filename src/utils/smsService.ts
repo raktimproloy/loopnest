@@ -206,7 +206,7 @@ export const sendOTPSMS = async (phoneNumber: string, otpCode: string, fullName:
 
 // Send payment accepted SMS
 export const sendPaymentAcceptedSMS = async (phoneNumber: string, studentName: string, courseName: string, coursePrice: number): Promise<SMSResponse> => {
-  const message = `Hello ${studentName}! Great news! Your payment of $${coursePrice} for "${courseName}" has been accepted. You can now access your course at LoopNest. - LoopNest Team`;
+  const message = `Hello ${studentName}! Great news! Your payment of Tk ${coursePrice} for "${courseName}" has been accepted. You can now access your course at LoopNest. - LoopNest Team`;
   
   return sendSMS({
     phoneNumber,
@@ -218,7 +218,7 @@ export const sendPaymentAcceptedSMS = async (phoneNumber: string, studentName: s
 // Send payment rejected SMS
 export const sendPaymentRejectedSMS = async (phoneNumber: string, studentName: string, courseName: string, coursePrice: number, reason?: string): Promise<SMSResponse> => {
   const reasonText = reason ? ` Reason: ${reason}.` : '';
-  const message = `Hello ${studentName}! Your payment of $${coursePrice} for "${courseName}" was rejected.${reasonText} Please review your payment details and try again. - LoopNest Team`;
+  const message = `Hello ${studentName}! Your payment of Tk ${coursePrice} for "${courseName}" was rejected.${reasonText} Please review your payment details and try again. - LoopNest Team`;
   
   return sendSMS({
     phoneNumber,

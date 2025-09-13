@@ -94,7 +94,7 @@ export const getPaymentById = async (userId: string, id: string) => {
 
 export const updatePaymentStatus = async (adminId: string, id: string, status: 'accepted' | 'rejected', reason?: string) => {
   const payment = await Payment.findById(id)
-    .populate('userId', 'fullName email')
+    .populate('userId', 'fullName email phone')
     .populate('courseId', 'title price');
   
   if (!payment) throw new AppError(httpStatus.NOT_FOUND, 'Payment not found');
@@ -114,6 +114,15 @@ export const updatePaymentStatus = async (adminId: string, id: string, status: '
     const course = payment.courseId as any;
     const studentEmail = student?.email;
     const studentPhone = student?.phone;
+    
+    console.log(`[PAYMENT SERVICE] Student data from payment:`, {
+      studentId: student?._id,
+      fullName: student?.fullName,
+      email: studentEmail,
+      phone: studentPhone,
+      hasEmail: !!studentEmail,
+      hasPhone: !!studentPhone
+    });
     
     if (studentEmail || studentPhone) {
       console.log(`[PAYMENT SERVICE] Sending ${status} notification to student:`, {

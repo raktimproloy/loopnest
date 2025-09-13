@@ -119,4 +119,40 @@ router.post(
   studentController.logout
 );
 
+// Test email endpoint
+router.post(
+  "/test-email",
+  studentController.sendTestEmail
+);
+
+// Check email configuration endpoint
+router.get(
+  "/email-config",
+  studentController.checkEmailConfig
+);
+
+// Test SMS endpoint
+router.post(
+  "/test-sms",
+  studentController.sendTestSMS
+);
+
+// Check SMS configuration endpoint
+router.get(
+  "/sms-config",
+  studentController.checkSMSConfig
+);
+
+// Test payment notification endpoint
+router.post(
+  "/test-payment-notification",
+  studentController.testPaymentNotification
+);
+
+// Test payment data fetch endpoint
+router.get(
+  "/test-payment-data",
+  studentController.testPaymentDataFetch
+);
+
 export const StudentRoutes = router;

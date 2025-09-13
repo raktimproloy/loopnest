@@ -99,6 +99,10 @@ app.use(cors(corsOptions))
 // Validate SMTP configuration at startup
 validateSMTPConfig();
 
+// Validate SMS configuration at startup
+import { SMSService } from './utils/smsService';
+SMSService.validateSMSConfig();
+
 // Display SMTP configuration guide if needed
 if (config.node_env === 'development') {
   console.log('\n=== LoopNest SMTP Configuration Guide ===');

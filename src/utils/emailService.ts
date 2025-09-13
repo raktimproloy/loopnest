@@ -220,29 +220,77 @@ export const sendOTPEmail = async (email: string, otpCode: string, fullName: str
   const maxRetries = 3;
   let lastError: any = null;
 
+  // Check if SMTP configuration is complete
+  if (!config.smtp_host || !config.smtp_port || !config.smtp_user || !config.smtp_pass) {
+    console.log(`[EMAIL SERVICE] ❌ SMTP configuration incomplete`);
+    console.log(`[EMAIL SERVICE] Missing: ${!config.smtp_host ? 'SMTP_HOST ' : ''}${!config.smtp_port ? 'SMTP_PORT ' : ''}${!config.smtp_user ? 'SMTP_USER ' : ''}${!config.smtp_pass ? 'SMTP_PASS ' : ''}`);
+    return {
+      success: false,
+      error: 'SMTP configuration incomplete. Please check your environment variables.',
+      details: {
+        missing: {
+          host: !config.smtp_host,
+          port: !config.smtp_port,
+          user: !config.smtp_user,
+          pass: !config.smtp_pass
+        }
+      }
+    };
+  }
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Log email sending attempt
       console.log(`[EMAIL SERVICE] Attempt ${attempt}/${maxRetries} - Sending OTP email to: ${email}`);
       console.log(`[EMAIL SERVICE] SMTP Config - Host: ${config.smtp_host}, Port: ${config.smtp_port}, User: ${config.smtp_user}`);
       
-      // Try primary transporter first
-      let transporter = createTransporter();
+      // Try multiple SMTP configurations
+      const smtpConfigs = [
+        {
+          name: 'Primary Config',
+          transporter: createTransporter()
+        },
+        {
+          name: 'Fallback Config',
+          transporter: createFallbackTransporter()
+        },
+        {
+          name: 'Gmail Fallback',
+          transporter: nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: config.smtp_user,
+              pass: config.smtp_pass,
+            },
+          })
+        }
+      ];
       
-      // Verify SMTP connection with timeout
-      console.log(`[EMAIL SERVICE] Verifying SMTP connection...`);
-      try {
-        await transporter.verify();
-        console.log(`[EMAIL SERVICE] ✅ SMTP connection verified successfully`);
-      } catch (verifyError: any) {
-        console.log(`[EMAIL SERVICE] Primary transporter failed, trying fallback...`);
-        console.log(`[EMAIL SERVICE] Verify error:`, verifyError.message);
-        
-        // Try fallback transporter
-        transporter = createFallbackTransporter();
-        await transporter.verify();
-        console.log(`[EMAIL SERVICE] ✅ Fallback SMTP connection verified successfully`);
+      let transporter = null;
+      let workingConfig = null;
+      
+      // Try each configuration until one works
+      for (const smtpConfig of smtpConfigs) {
+        try {
+          console.log(`[EMAIL SERVICE] Testing ${smtpConfig.name}...`);
+          await smtpConfig.transporter.verify();
+          console.log(`[EMAIL SERVICE] ✅ ${smtpConfig.name} connection verified successfully`);
+          transporter = smtpConfig.transporter;
+          workingConfig = smtpConfig.name;
+          break;
+        } catch (verifyError: any) {
+          console.log(`[EMAIL SERVICE] ❌ ${smtpConfig.name} failed:`, verifyError.message);
+          continue;
+        }
       }
+      
+      if (!transporter) {
+        throw new Error('All SMTP configurations failed');
+      }
+      
+      console.log(`[EMAIL SERVICE] Using ${workingConfig} for email delivery`);
       
       const mailOptions = {
         from: {
@@ -512,7 +560,7 @@ Great news! Your payment for "${courseName}" has been accepted and processed suc
 
 Course Details:
 - Course: ${courseName}
-- Amount: $${coursePrice}
+- Amount: Tk${coursePrice}
 - Status: ✅ Accepted
 
 You can now access your course and start learning immediately!
@@ -588,7 +636,7 @@ Support: support@theloopnest.com
                 </div>
                 <div class="course-detail-row">
                     <span class="course-detail-label">Amount Paid:</span>
-                    <span class="course-detail-value">$${coursePrice}</span>
+                    <span class="course-detail-value">Tk${coursePrice}</span>
                 </div>
                 <div class="course-detail-row">
                     <span class="course-detail-label">Status:</span>
