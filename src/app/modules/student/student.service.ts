@@ -214,8 +214,16 @@ export const manualRegisterStudent = async (payload: Partial<TStudent> & { auth_
   // Remove sensitive data
   const { password, otpCode: _otp, otpExpire: _otpExpire, ...studentWithoutSensitiveData } = newStudent.toObject();
 
-  // Return student data without OTP information
-  return studentWithoutSensitiveData;
+  // Determine auth_input type based on what was provided
+  const authInput = creationData.email || creationData.phone;
+  const authInputType = creationData.email ? 'email' : 'phone';
+
+  // Return student data without OTP information, including auth_input info
+  return {
+    ...studentWithoutSensitiveData,
+    auth_input: authInput,
+    auth_input_type: authInputType,
+  };
 };
 
 export const loginStudent = async (credentials: TLoginCredentials | { auth_input: string; password: string }) => {

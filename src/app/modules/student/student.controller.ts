@@ -134,10 +134,15 @@ const clearAuthCookies = (res: any, req: any) => {
 const manualRegister = catchAsync(async (req, res) => {
   const result = await StudentServices.manualRegisterStudent(req.body);
   
+  // Determine the appropriate message based on auth_input_type
+  const message = result.auth_input_type === 'email' 
+    ? "Student registered successfully. Please check your email for OTP verification."
+    : "Student registered successfully. Please check your phone for OTP verification.";
+  
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Student registered successfully. Please check your email for OTP verification.",
+    message: message,
     data: result,
   });
 });
