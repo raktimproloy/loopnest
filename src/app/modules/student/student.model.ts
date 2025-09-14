@@ -29,6 +29,7 @@ const studentSchema = new Schema<TUser>({
   facebookId: { type: String },
   lastLogin: { type: Date },
   activeCourses: [{ type: Types.ObjectId, ref: 'Course', default: [] }],
+  usedCoupons: [{ type: Types.ObjectId, ref: 'Coupon', default: [] }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   isDeleted: { type: Boolean, default: false },

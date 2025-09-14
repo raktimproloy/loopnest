@@ -14,6 +14,7 @@ export type TStudent = {
   facebookId?: string;
   lastLogin?: Date;
   activeCourses?: string[];
+  usedCoupons?: string[];
   createdAt: Date;
   updatedAt: Date;
   isDeleted: boolean;
