@@ -264,6 +264,85 @@ export const useCoupon = async (payload: TCouponUsageData) => {
     discountAmount = course.price;
   }
 
+  // Return coupon validation result without updating database
+  return {
+    message: "Coupon is valid and can be applied",
+    coupon: {
+      code: coupon.cuponCode,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      discountAmount,
+      originalPrice: course.price,
+      finalPrice: course.price - discountAmount,
+    },
+  };
+};
+
+// New function to apply coupon during payment (adds to user DB)
+export const applyCoupon = async (payload: TCouponUsageData) => {
+  const { cuponCode, userId, courseId } = payload;
+
+  // Get coupon
+  const coupon = await Coupon.findOne({
+    cuponCode: cuponCode.toUpperCase(),
+    isDeleted: false,
+  });
+
+  if (!coupon) {
+    throw new AppError(httpStatus.NOT_FOUND, COUPON_MESSAGES.NOT_FOUND);
+  }
+
+  // Check if coupon is active
+  if (coupon.status !== 'active') {
+    throw new AppError(httpStatus.BAD_REQUEST, COUPON_MESSAGES.INACTIVE);
+  }
+
+  // Check if coupon is expired
+  if (coupon.expiryDate < new Date()) {
+    // Update coupon status to expired
+    await Coupon.findByIdAndUpdate(coupon._id, { status: 'expired' });
+    throw new AppError(httpStatus.BAD_REQUEST, COUPON_MESSAGES.EXPIRED);
+  }
+
+  // Check if coupon is for the correct course
+  if (coupon.courseId.toString() !== courseId) {
+    throw new AppError(httpStatus.BAD_REQUEST, COUPON_MESSAGES.INVALID_COURSE);
+  }
+
+  // Check usage limit
+  if (coupon.usageLimit && coupon.totalUse >= coupon.usageLimit) {
+    throw new AppError(httpStatus.BAD_REQUEST, COUPON_MESSAGES.USAGE_LIMIT_REACHED);
+  }
+
+  // Get user and check if they already used this coupon
+  const user = await Student.findById(userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.usedCoupons && user.usedCoupons.includes(coupon._id.toString())) {
+    throw new AppError(httpStatus.BAD_REQUEST, COUPON_MESSAGES.ALREADY_USED);
+  }
+
+  // Get course information
+  const course = await Course.findById(courseId);
+  if (!course) {
+    throw new AppError(httpStatus.NOT_FOUND, "Course not found");
+  }
+
+  // Calculate discount amount
+  let discountAmount = 0;
+  if (coupon.discountType === 'percentage') {
+    discountAmount = (course.price * coupon.discountValue) / 100;
+  } else {
+    discountAmount = coupon.discountValue;
+  }
+
+  // Ensure discount doesn't exceed course price
+  if (discountAmount > course.price) {
+    discountAmount = course.price;
+  }
+
   // Update coupon usage
   await Coupon.findByIdAndUpdate(coupon._id, {
     $inc: { totalUse: 1 }
@@ -351,4 +430,5 @@ export const CouponServices = {
   updateCouponStatus,
   deleteCoupon,
   useCoupon,
+  applyCoupon,
 };

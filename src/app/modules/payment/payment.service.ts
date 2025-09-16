@@ -4,6 +4,7 @@ import { Payment } from './payment.model';
 import { TPayment } from './payment.interface';
 import { Student as User } from '../student/student.model';
 import { sendPaymentAcceptedEmail, sendPaymentRejectedEmail, sendPaymentAcceptedNotification, sendPaymentRejectedNotification } from '../../../utils/emailService';
+import { CouponServices } from '../coupon/coupon.service';
 
 export const createPaymentRequest = async (userId: string, payload: Omit<TPayment, 'userId' | 'status' | 'accept_admin_id' | 'createdAt' | 'updatedAt'>) => {
   // Check if student already has this course in activeCourses
@@ -28,8 +29,28 @@ export const createPaymentRequest = async (userId: string, payload: Omit<TPaymen
     throw new AppError(httpStatus.BAD_REQUEST, 'You already have a pending payment request for this course');
   }
 
+  // Handle coupon validation and application if couponCode is provided
+  let finalPrice = payload.price;
+  if (payload.couponCode) {
+    try {
+      // Apply coupon and get discount information
+      const couponResult = await CouponServices.applyCoupon({
+        cuponCode: payload.couponCode,
+        userId,
+        courseId: payload.courseId,
+      });
+      
+      // Update the price with the discounted amount
+      finalPrice = couponResult.coupon.finalPrice;
+    } catch (error) {
+      // If coupon validation fails, throw the error
+      throw error;
+    }
+  }
+
   const doc = await Payment.create({
     ...payload,
+    price: finalPrice, // Use the final price after coupon discount
     userId,
     status: 'pending',
   });

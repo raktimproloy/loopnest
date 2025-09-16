@@ -11,6 +11,7 @@ export type TPayment = {
   account_name?: string;
   bank_name?: string;
   account_number?: string;
+  couponCode?: string; // Optional coupon code for discount
   createdAt: Date;
   updatedAt: Date;
 };

@@ -11,6 +11,7 @@ const createPaymentValidationSchema = z.object({
     account_name: z.string().optional(),
     bank_name: z.string().optional(),
     account_number: z.string().optional(),
+    couponCode: z.string().optional(), // Optional coupon code for discount
   }),
   cookies: z.object({}).optional(),
 });
