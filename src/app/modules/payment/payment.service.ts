@@ -31,11 +31,11 @@ export const createPaymentRequest = async (userId: string, payload: Omit<TPaymen
 
   // Handle coupon validation and application if couponCode is provided
   let finalPrice = payload.price;
-  if (payload.couponCode) {
+  if (payload.cuponCode) {
     try {
       // Apply coupon and get discount information
       const couponResult = await CouponServices.applyCoupon({
-        cuponCode: payload.couponCode,
+        cuponCode: payload.cuponCode,
         userId,
         courseId: payload.courseId,
       });

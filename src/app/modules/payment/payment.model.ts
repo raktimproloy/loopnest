@@ -14,7 +14,7 @@ const paymentSchema = new Schema<TPayment>({
   bank_name: { type: String },
   account_number: { type: String },
   accept_admin_id: { type: String, ref: 'User' },
-  couponCode: { type: String }, // Optional coupon code for discount
+  cuponCode: { type: String }, // Optional coupon code for discount
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
